@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	gt "github.com/gnames/gntagger"
+	. "github.com/gnames/gntagger"
 	"github.com/jroimartin/gocui"
 )
 
@@ -16,9 +16,9 @@ func main() {
 
 	g.Cursor = true
 
-	g.SetManagerFunc(gt.Layout)
+	g.SetManagerFunc(Layout)
 
-	if err := gt.Keybindings(g); err != nil {
+	if err := Keybindings(g); err != nil {
 		log.Panicln(err)
 	}
 
