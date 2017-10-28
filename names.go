@@ -90,3 +90,39 @@ func NamesFromJSON() *Names {
 	o.FromJSON(b)
 	return &Names{o, 0}
 }
+
+type Text struct {
+	Original []rune
+	OffsetY  int
+}
+
+func (t *Text) Markup(n *Names) string {
+	markup := make([]rune, len(t.Original)+30)
+	name := n.Data.Names[n.Current]
+	tailLen := len(t.Original) - name.OffsetEnd
+	markup = append(markup, t.Original[0:name.OffsetStart]...)
+	markup = append(markup, []rune("\033[40;33;1m")...)
+	markup = append(markup, t.Original[name.OffsetStart:name.OffsetEnd]...)
+	markup = append(markup, []rune("\033[0m")...)
+	markup = append(markup, t.Original[name.OffsetEnd:tailLen]...)
+	t.OffsetY = newLinesNum(t.Original[0:name.OffsetStart])
+	return string(markup)
+}
+
+func newLinesNum(rs []rune) int {
+	offset := 1
+	for _, v := range rs {
+		if v == '\n' || v == '\v' {
+			offset++
+		}
+	}
+	return offset
+}
+
+func PrepareText() *Text {
+	b, err := ioutil.ReadFile("../../testdata/seashells_book.txt")
+	if err != nil {
+		log.Panicln(err)
+	}
+	return &Text{[]rune(string(b)), 0}
+}

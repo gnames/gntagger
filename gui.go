@@ -2,7 +2,6 @@ package gntagger
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 
 	"github.com/jroimartin/gocui"
@@ -10,6 +9,7 @@ import (
 
 var (
 	names = NamesFromJSON()
+	text  = PrepareText()
 )
 
 func Keybindings(g *gocui.Gui) error {
@@ -77,14 +77,14 @@ func viewText(g *gocui.Gui, maxX, maxY int) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		b, err := ioutil.ReadFile("../../testdata/seashells_book.txt")
-		if err != nil {
-			panic(err)
+		fmt.Fprintf(v, "%s", text.Markup(names))
+
+		ox, oy := v.Origin()
+		err := v.SetOrigin(ox, oy+text.OffsetY-maxY/2)
+		if err != gocui.ErrUnknownView {
+			return err
 		}
-		fmt.Fprintf(v, "%s", b)
-		v.Editable = false
 		v.Title = "Text"
-		v.Wrap = true
 	}
 	return nil
 }
@@ -98,7 +98,7 @@ func viewHelp(g *gocui.Gui, maxX, maxY int) error {
 		v.BgColor = gocui.ColorWhite
 		v.FgColor = gocui.ColorBlack
 		fmt.Fprintln(v,
-			"→ (yes*) next, ← back, Y yes, N no, S sp, U uninom, ? unknown, Ctrl-C exit")
+			"→ (accept*) next, ← back, Y yes, N no, S sp, U uninom, ? unknown, Ctrl-C exit")
 	}
 	return nil
 }
@@ -107,32 +107,55 @@ func quit(g *gocui.Gui, v *gocui.View) error {
 	return gocui.ErrQuit
 }
 
-func listForward(g *gocui.Gui, view *gocui.View) error {
+func listForward(g *gocui.Gui, viewNames *gocui.View) error {
+	var viewText *gocui.View
 	if names.Current == len(names.Data.Names) {
 		names.Current--
 		return nil
 	}
 	for _, v := range g.Views() {
 		if v.Name() == "names" {
-			view = v
-			break
+			viewNames = v
+		} else if v.Name() == "text" {
+			viewText = v
 		}
 	}
-	err := updateNamesView(g, view, 1)
+	err := updateNamesView(g, viewNames, 1)
+	if err != nil {
+		return err
+	}
+	err = updateText(g, viewText)
 	return err
 }
 
-func listBack(g *gocui.Gui, view *gocui.View) error {
+func listBack(g *gocui.Gui, viewNames *gocui.View) error {
+	var viewText *gocui.View
 	if names.Current == 0 {
 		return nil
 	}
 	for _, v := range g.Views() {
 		if v.Name() == "names" {
-			view = v
-			break
+			viewNames = v
+		} else if v.Name() == "text" {
+			viewText = v
 		}
 	}
-	err := updateNamesView(g, view, -1)
+	err := updateNamesView(g, viewNames, -1)
+	if err != nil {
+		return err
+	}
+	err = updateText(g, viewText)
+	return err
+}
+
+func updateText(g *gocui.Gui, v *gocui.View) error {
+	_, maxY := g.Size()
+	v.Clear()
+	for i := 0; i <= maxY/2+3; i++ {
+		fmt.Fprintln(v)
+	}
+	fmt.Fprintln(v, text.Markup(names))
+	err := v.SetOrigin(0, text.OffsetY+3)
 	return err
 }
 
@@ -154,8 +177,6 @@ func updateNamesView(g *gocui.Gui, v *gocui.View, increment int) error {
 	}
 	fmt.Fprintln(v, names.String())
 	ox, oy := v.Origin()
-	if err := v.SetOrigin(ox, oy+(4*increment)); err != nil {
-		return err
-	}
-	return nil
+	err := v.SetOrigin(ox, oy+(4*increment))
+	return err
 }
