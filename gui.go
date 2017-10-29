@@ -8,10 +8,32 @@ import (
 )
 
 var (
-	names = NamesFromJSON()
-	text  = PrepareText()
+	names = &Names{}
+	text  = &Text{}
 	a     = Annotation{}
 )
+
+func InitGUI(path string) {
+	text = PrepareText(path)
+	names = NamesFromJSON(path + ".json")
+	g, err := gocui.NewGui(gocui.OutputNormal)
+	if err != nil {
+		log.Panicln(err)
+	}
+	defer g.Close()
+
+	g.Cursor = true
+
+	g.SetManagerFunc(Layout)
+
+	if err := Keybindings(g); err != nil {
+		log.Panicln(err)
+	}
+
+	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+		log.Panicln(err)
+	}
+}
 
 func Keybindings(g *gocui.Gui) error {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
@@ -125,7 +147,7 @@ func viewHelp(g *gocui.Gui, maxX, maxY int) error {
 		v.BgColor = gocui.ColorWhite
 		v.FgColor = gocui.ColorBlack
 		fmt.Fprintln(v,
-			"→ (yes*) next, ← back, Space no, ^Y yes, ^S species, ^U uninomial, ^D doubt, ^C exit")
+			"→ (yes*) next, ← back, Space no, ^Y yes, ^S species, ^U uninomial, ^D doubt, ^W save, ^C exit")
 	}
 	return nil
 }

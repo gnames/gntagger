@@ -32,7 +32,11 @@ func (a *Annotation) Doubtful() string {
 }
 
 type Names struct {
-	Data    gnfinder.OutputJSON
+	// Path to json file with names
+	Path string
+	// Data is a gnfinder output
+	Data gnfinder.OutputJSON
+	// Current the index to a currently curated name
 	Current int
 }
 
@@ -84,19 +88,23 @@ func annotation(a string) string {
 	return fmt.Sprintf("\033[%d;40;2mAnnot: %s\033[0m", color, a)
 }
 
-func NamesFromJSON() *Names {
+func NamesFromJSON(path string) *Names {
 	o := gnfinder.OutputJSON{}
-	b, err := ioutil.ReadFile("../../testdata/seashells_book.json")
+	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Panicln(err)
 	}
 	o.FromJSON(b)
-	return &Names{o, 0}
+	return &Names{path, o, 0}
 }
 
 type Text struct {
+	// Path to the text file
+	Path string
+	// Content of the file converted to runes
 	Original []rune
-	OffsetY  int
+	// Vertical offset of the text to align it with name
+	OffsetY int
 }
 
 func (t *Text) Markup(n *Names) string {
@@ -122,10 +130,10 @@ func newLinesNum(rs []rune) int {
 	return offset
 }
 
-func PrepareText() *Text {
-	b, err := ioutil.ReadFile("../../testdata/seashells_book.txt")
+func PrepareText(path string) *Text {
+	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Panicln(err)
 	}
-	return &Text{[]rune(string(b)), 0}
+	return &Text{path, []rune(string(b)), 0}
 }
