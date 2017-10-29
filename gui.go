@@ -41,6 +41,11 @@ func Keybindings(g *gocui.Gui) error {
 		return err
 	}
 
+	if err := g.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone,
+		save); err != nil {
+		return err
+	}
+
 	if err := g.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone,
 		listBack); err != nil {
 		return err
@@ -56,22 +61,22 @@ func Keybindings(g *gocui.Gui) error {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlY, gocui.ModNone,
+	if err := g.SetKeybinding("", 'y', gocui.ModNone,
 		yesName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone,
+	if err := g.SetKeybinding("", 's', gocui.ModNone,
 		speciesName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlU, gocui.ModNone,
+	if err := g.SetKeybinding("", 'u', gocui.ModNone,
 		uninomialName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlD, gocui.ModNone,
+	if err := g.SetKeybinding("", 'd', gocui.ModNone,
 		doubtfulName); err != nil {
 		return err
 	}
@@ -105,10 +110,7 @@ func viewNames(g *gocui.Gui, maxX, maxY int) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		v.Highlight = true
 		v.Title = "Names"
-		v.SelBgColor = gocui.ColorGreen
-		v.SelFgColor = gocui.ColorBlack
 		err := v.SetOrigin(0, 5)
 		if err != nil {
 			log.Panicln(err)
@@ -117,6 +119,11 @@ func viewNames(g *gocui.Gui, maxX, maxY int) error {
 			fmt.Fprintln(v)
 		}
 		fmt.Fprintln(v, names.String())
+		ox, oy := v.Origin()
+		err = v.SetOrigin(ox, oy+(4*names.Data.Meta.CurrentName))
+		if err != nil {
+			log.Panicln(err)
+		}
 	}
 	return nil
 }
@@ -126,6 +133,7 @@ func viewText(g *gocui.Gui, maxX, maxY int) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
+		v.Title = "Text"
 		fmt.Fprintf(v, "%s", text.Markup(names))
 
 		ox, oy := v.Origin()
@@ -133,7 +141,6 @@ func viewText(g *gocui.Gui, maxX, maxY int) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		v.Title = "Text"
 	}
 	return nil
 }
@@ -147,13 +154,19 @@ func viewHelp(g *gocui.Gui, maxX, maxY int) error {
 		v.BgColor = gocui.ColorWhite
 		v.FgColor = gocui.ColorBlack
 		fmt.Fprintln(v,
-			"→ (yes*) next, ← back, Space no, ^Y yes, ^S species, ^U uninomial, ^D doubt, ^W save, ^C exit")
+			"→ (yes*) next, ← back, Space no, y yes, s species, u uninomial, d doubt, ^S save, ^C exit")
 	}
 	return nil
 }
 
 func quit(g *gocui.Gui, v *gocui.View) error {
+	save(g, v)
 	return gocui.ErrQuit
+}
+
+func save(g *gocui.Gui, v *gocui.View) error {
+	err := names.Save()
+	return err
 }
 
 func speciesName(g *gocui.Gui, v *gocui.View) error {
@@ -194,8 +207,8 @@ func setKey(g *gocui.Gui, v *gocui.View, annot string) error {
 
 func listForward(g *gocui.Gui, viewNames *gocui.View) error {
 	var viewText *gocui.View
-	if names.Current == len(names.Data.Names) {
-		names.Current--
+	if names.Data.Meta.CurrentName == len(names.Data.Names) {
+		names.Data.Meta.CurrentName--
 		return nil
 	}
 	for _, v := range g.Views() {
@@ -215,7 +228,7 @@ func listForward(g *gocui.Gui, viewNames *gocui.View) error {
 
 func listBack(g *gocui.Gui, viewNames *gocui.View) error {
 	var viewText *gocui.View
-	if names.Current == 0 {
+	if names.Data.Meta.CurrentName == 0 {
 		return nil
 	}
 	for _, v := range g.Views() {
@@ -247,7 +260,7 @@ func updateText(g *gocui.Gui, v *gocui.View) error {
 func updateNamesView(g *gocui.Gui, v *gocui.View,
 	increment int, annot string) error {
 	_, maxY := g.Size()
-	name := &names.Data.Names[names.Current]
+	name := &names.Data.Names[names.Data.Meta.CurrentName]
 	if annot == a.Accepted() {
 		if increment == 1 && name.Annotation == "" {
 			name.Annotation = annot
@@ -257,7 +270,7 @@ func updateNamesView(g *gocui.Gui, v *gocui.View,
 	} else if annot != "" {
 		name.Annotation = annot
 	}
-	names.Current += increment
+	names.Data.Meta.CurrentName += increment
 	v.Clear()
 	for i := 0; i <= maxY/2+1; i++ {
 		fmt.Fprintln(v)

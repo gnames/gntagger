@@ -36,8 +36,6 @@ type Names struct {
 	Path string
 	// Data is a gnfinder output
 	Data gnfinder.OutputJSON
-	// Current the index to a currently curated name
-	Current int
 }
 
 func (n *Names) String() string {
@@ -46,12 +44,17 @@ func (n *Names) String() string {
 	namesTotal := len(names)
 	str := make([]string, len(names)*4)
 	for i, v := range names {
-		current = (i == n.Current)
+		current = (i == n.Data.Meta.CurrentName)
 		for j, w := range nameStrings(&v, current, i+1, namesTotal) {
 			str[i*4+j] = w
 		}
 	}
 	return strings.Join(str, "\n")
+}
+
+func (n *Names) Save() error {
+	json := n.Data.ToJSON()
+	return ioutil.WriteFile(n.Path, json, 0644)
 }
 
 func nameStrings(n *gnfinder.NameJSON, current bool, i int,
@@ -95,7 +98,7 @@ func NamesFromJSON(path string) *Names {
 		log.Panicln(err)
 	}
 	o.FromJSON(b)
-	return &Names{path, o, 0}
+	return &Names{path, o}
 }
 
 type Text struct {
@@ -109,7 +112,7 @@ type Text struct {
 
 func (t *Text) Markup(n *Names) string {
 	markup := make([]rune, len(t.Original)+30)
-	name := n.Data.Names[n.Current]
+	name := n.Data.Names[n.Data.Meta.CurrentName]
 	tailLen := len(t.Original) - name.OffsetEnd
 	markup = append(markup, t.Original[0:name.OffsetStart]...)
 	markup = append(markup, []rune("\033[40;33;1m")...)

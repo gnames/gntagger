@@ -18,11 +18,6 @@ func main() {
 	var data []byte
 	var err error
 	switch flag.NArg() {
-	case 0:
-		data, err = ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			log.Panic(err)
-		}
 	case 1:
 		path = flag.Arg(0)
 		data, err = ioutil.ReadFile(path)
@@ -30,13 +25,16 @@ func main() {
 			log.Panic(err)
 		}
 	default:
-		fmt.Printf("input must be from stdin or file\n")
+		fmt.Printf("Please enter the path to your text file\n")
 		os.Exit(1)
 	}
 	json := gnfinder.FindNamesJSON(data, &dict)
-	err = ioutil.WriteFile(path+".json", json, 0644)
-	if err != nil {
-		log.Panic(err)
+	jsonPath := path + ".json"
+	if _, err = os.Stat(jsonPath); os.IsNotExist(err) {
+		err = ioutil.WriteFile(jsonPath, json, 0644)
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 	InitGUI(path)
 }
