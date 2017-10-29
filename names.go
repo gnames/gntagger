@@ -27,8 +27,8 @@ func (a *Annotation) Species() string {
 	return "Species"
 }
 
-func (a *Annotation) Undecided() string {
-	return "Undecided"
+func (a *Annotation) Doubtful() string {
+	return "Doubtful"
 }
 
 type Names struct {
@@ -39,25 +39,28 @@ type Names struct {
 func (n *Names) String() string {
 	var current bool
 	names := n.Data.Names
+	namesTotal := len(names)
 	str := make([]string, len(names)*4)
 	for i, v := range names {
 		current = (i == n.Current)
-		for j, w := range nameStrings(&v, current) {
+		for j, w := range nameStrings(&v, current, i+1, namesTotal) {
 			str[i*4+j] = w
 		}
 	}
 	return strings.Join(str, "\n")
 }
 
-func nameStrings(n *gnfinder.NameJSON, current bool) []string {
+func nameStrings(n *gnfinder.NameJSON, current bool, i int,
+	total int) []string {
 	name := make([]string, 4)
 	nameString := n.Name
 	if current {
 		nameString = fmt.Sprintf("\033[43;30;1m%s\033[0m", nameString)
 	}
-	name[0] = fmt.Sprintf("Type: %s", n.Type)
-	name[1] = fmt.Sprintf("Name: %s", nameString)
-	name[2] = annotation(n.Annotation)
+	name[0] = fmt.Sprintf("    %d/%d", i, total)
+	name[1] = fmt.Sprintf("Type: %s", n.Type)
+	name[2] = fmt.Sprintf("Name: %s", nameString)
+	name[3] = annotation(n.Annotation)
 	return name
 }
 
@@ -69,12 +72,12 @@ func annotation(a string) string {
 		color = 32 //green
 	case annotation.NotName():
 		color = 31 //red
-	case annotation.Undecided():
+	case annotation.Doubtful():
 		color = 37 //light grey
 	case annotation.Species():
-		color = 92 //light green
+		color = 35 //magenta
 	case annotation.Uninomial():
-		color = 92 //light green
+		color = 35 //magenta
 	default:
 		color = 33
 	}
