@@ -23,6 +23,10 @@ func (a *Annotation) Uninomial() string {
 	return "Uninomial"
 }
 
+func (a *Annotation) Genus() string {
+	return "Genus"
+}
+
 func (a *Annotation) Species() string {
 	return "Species"
 }
@@ -82,6 +86,8 @@ func annotation(a string) string {
 	case annotation.Doubtful():
 		color = 37 //light grey
 	case annotation.Species():
+		color = 35 //magenta
+	case annotation.Genus():
 		color = 35 //magenta
 	case annotation.Uninomial():
 		color = 35 //magenta

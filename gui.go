@@ -71,6 +71,11 @@ func Keybindings(g *gocui.Gui) error {
 		return err
 	}
 
+	if err := g.SetKeybinding("", 'g', gocui.ModNone,
+		genusName); err != nil {
+		return err
+	}
+
 	if err := g.SetKeybinding("", 'u', gocui.ModNone,
 		uninomialName); err != nil {
 		return err
@@ -157,7 +162,7 @@ func viewHelp(g *gocui.Gui, maxX, maxY int) error {
 		v.BgColor = gocui.ColorWhite
 		v.FgColor = gocui.ColorBlack
 		fmt.Fprintln(v,
-			"→ (yes*) next, ← back, Space no, y yes, s species, u uninomial, d doubt, ^S save, ^C exit")
+			"→ (yes*) next, ← back, Space no, y yes, s species, g genus, u uninomial, d doubt, ^S save, ^C exit")
 	}
 	return nil
 }
@@ -174,6 +179,11 @@ func save(g *gocui.Gui, v *gocui.View) error {
 
 func speciesName(g *gocui.Gui, v *gocui.View) error {
 	err := setKey(g, v, a.Species())
+	return err
+}
+
+func genusName(g *gocui.Gui, v *gocui.View) error {
+	err := setKey(g, v, a.Genus())
 	return err
 }
 
