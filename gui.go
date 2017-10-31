@@ -13,9 +13,9 @@ var (
 	a     = Annotation{}
 )
 
-func InitGUI(path string) {
-	text = PrepareText(path)
-	names = NamesFromJSON(path + ".json")
+func InitGUI(t *Text, n *Names) {
+	text = t
+	names = n
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
