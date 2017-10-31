@@ -134,10 +134,13 @@ func viewText(g *gocui.Gui, maxX, maxY int) error {
 			return err
 		}
 		v.Title = "Text"
+		for i := 0; i <= maxY/2+2; i++ {
+			fmt.Fprintln(v)
+		}
 		fmt.Fprintf(v, "%s", text.Markup(names))
 
-		ox, oy := v.Origin()
-		err := v.SetOrigin(ox, oy+text.OffsetY-maxY/2+1)
+		fmt.Fprintln(v, text.Markup(names))
+		err := v.SetOrigin(0, text.OffsetY+3)
 		if err != gocui.ErrUnknownView {
 			return err
 		}
