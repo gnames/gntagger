@@ -8,9 +8,10 @@ import (
 )
 
 var (
-	names = &Names{}
-	text  = &Text{}
-	a     = Annotation{}
+	names     = &Names{}
+	text      = &Text{}
+	a         = Annotation{}
+	saveCount = 0
 )
 
 func InitGUI(t *Text, n *Names) {
@@ -272,6 +273,11 @@ func updateText(g *gocui.Gui, v *gocui.View) error {
 
 func updateNamesView(g *gocui.Gui, v *gocui.View,
 	increment int, annot string) error {
+	saveCount++
+	if saveCount == 30 {
+		save(g, v)
+		saveCount = 0
+	}
 	_, maxY := g.Size()
 	name := &names.Data.Names[names.Data.Meta.CurrentName]
 	if annot == a.Accepted() {
