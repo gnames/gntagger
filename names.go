@@ -117,14 +117,13 @@ type Text struct {
 }
 
 func (t *Text) Markup(n *Names) string {
-	markup := make([]rune, len(t.Original)+30)
+	var markup []rune
 	name := n.Data.Names[n.Data.Meta.CurrentName]
-	tailLen := len(t.Original) - name.OffsetEnd
 	markup = append(markup, t.Original[0:name.OffsetStart]...)
 	markup = append(markup, []rune("\033[40;33;1m")...)
 	markup = append(markup, t.Original[name.OffsetStart:name.OffsetEnd]...)
 	markup = append(markup, []rune("\033[0m")...)
-	markup = append(markup, t.Original[name.OffsetEnd:tailLen]...)
+	markup = append(markup, t.Original[name.OffsetEnd:len(t.Original)]...)
 	t.OffsetY = newLinesNum(t.Original[0:name.OffsetStart])
 	return string(markup)
 }
