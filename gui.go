@@ -220,8 +220,7 @@ func setKey(g *gocui.Gui, v *gocui.View, annot string) error {
 
 func listForward(g *gocui.Gui, viewNames *gocui.View) error {
 	var viewText *gocui.View
-	if names.Data.Meta.CurrentName == len(names.Data.Names) {
-		names.Data.Meta.CurrentName--
+	if names.Data.Meta.CurrentName >= len(names.Data.Names) - 1 {
 		return nil
 	}
 	for _, v := range g.Views() {
