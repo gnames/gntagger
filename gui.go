@@ -220,18 +220,19 @@ func setKey(g *gocui.Gui, v *gocui.View, annot string) error {
 
 func listForward(g *gocui.Gui, viewNames *gocui.View) error {
 	var (
-		viewText *gocui.View
+		viewText  *gocui.View
 		increment int
-		err error
+		err       error
 	)
 	for _, v := range g.Views() {
-		if v.Name() == "names" {
+		switch v.Name() {
+		case "names":
 			viewNames = v
-		} else if v.Name() == "text" {
+		case "text":
 			viewText = v
 		}
 	}
-	if names.Data.Meta.CurrentName == len(names.Data.Names) - 1 {
+	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 {
 		increment = 0
 	} else {
 		increment = 1
