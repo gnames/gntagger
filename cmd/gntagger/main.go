@@ -15,14 +15,14 @@ import (
 
 func main() {
 	flag.Usage = func() {
-		help :=  "Usage of %s:\n\n%s file_with_names\n\nor\n\n" +
-		"cat file | %s\n\n" +
-		"If the input is a file, the results will be placed " +
-		"next to the file under a directory with the same name " +
-		"as the file.\n" +
-		"If the input compes from a pipe the results will be located in " +
-		"a ./gntagger_input directory.\n\n" +
-		"Documentation: https://godoc.org/github.com/gnames/gntagger\n\n"
+		help := "Usage of %s:\n\n%s file_with_names\n\nor\n\n" +
+			"cat file | %s\n\n" +
+			"If the input is a file, the results will be placed " +
+			"next to the file under a directory with the same name " +
+			"as the file.\n" +
+			"If the input compes from a pipe the results will be located in " +
+			"a ./gntagger_input directory.\n\n" +
+			"Documentation: https://godoc.org/github.com/gnames/gntagger\n\n"
 
 		fmt.Fprintf(os.Stderr, help, os.Args[0], os.Args[0], os.Args[0])
 		flag.PrintDefaults()
@@ -54,6 +54,12 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
+
+	if names.Data.Meta.TotalNames == 0 {
+		fmt.Printf("\nNo names had been found in the document\n\n")
+		os.Exit(0)
+	}
+
 	InitGUI(txt, names)
 }
 
