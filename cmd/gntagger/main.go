@@ -14,6 +14,20 @@ import (
 )
 
 func main() {
+	flag.Usage = func() {
+		help :=  "Usage of %s:\n\n%s file_with_names\n\nor\n\n" +
+		"cat file | %s\n\n" +
+		"If the input is a file, the results will be placed " +
+		"next to the file under a directory with the same name " +
+		"as the file.\n" +
+		"If the input compes from a pipe the results will be located in " +
+		"a ./gntagger_input directory.\n\n" +
+		"Documentation: https://godoc.org/github.com/gnames/gntagger\n\n"
+
+		fmt.Fprintf(os.Stderr, help, os.Args[0], os.Args[0], os.Args[0])
+		flag.PrintDefaults()
+	}
+
 	var path string
 	flag.Parse()
 	var data []byte
@@ -60,7 +74,7 @@ func sanitizeText(b []byte) []byte {
 func prepareFilepaths(path string) (string, string) {
 	file := "input.txt"
 	if path == "" {
-		return "./gntagger", file
+		return "./gntagger_input", file
 	}
 	d, f := filepath.Split(path)
 	ext := filepath.Ext(f)
