@@ -219,10 +219,11 @@ func setKey(g *gocui.Gui, v *gocui.View, annot string) error {
 }
 
 func listForward(g *gocui.Gui, viewNames *gocui.View) error {
-	var viewText *gocui.View
-	if names.Data.Meta.CurrentName >= len(names.Data.Names) - 1 {
-		return nil
-	}
+	var (
+		viewText *gocui.View
+		increment int
+		err error
+	)
 	for _, v := range g.Views() {
 		if v.Name() == "names" {
 			viewNames = v
@@ -230,7 +231,12 @@ func listForward(g *gocui.Gui, viewNames *gocui.View) error {
 			viewText = v
 		}
 	}
-	err := updateNamesView(g, viewNames, 1, a.Accepted())
+	if names.Data.Meta.CurrentName == len(names.Data.Names) - 1 {
+		increment = 0
+	} else {
+		increment = 1
+	}
+	err = updateNamesView(g, viewNames, increment, a.Accepted())
 	if err != nil {
 		return err
 	}
