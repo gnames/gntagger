@@ -3,6 +3,18 @@ Takes output from gnfinder and uses it to find false positives and false negativ
 
 [![Ascii Cast][asciicast-img]][asciicast]
 
+## Conversion of PDF to text
+
+For modern linux environments you can use `less` command. For mac there is an
+`xpdf` package:
+
+```bash
+brew install Caskroom/cask/xquartz
+brew install xpdf
+pdftotext doc.pdf doc.txt
+```
+
+
 
 [asciicast-img]: https://asciinema.org/a/wNfIt2TfZiyrAwJZKhuq5DkHV.png
 [asciicast]: https://asciinema.org/a/wNfIt2TfZiyrAwJZKhuq5DkHV
