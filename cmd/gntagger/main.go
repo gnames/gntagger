@@ -19,6 +19,13 @@ func main() {
 	var data []byte
 	var err error
 
+	f, err := os.OpenFile("log.log", os.O_APPEND | os.O_CREATE | os.O_RDWR, 0666)
+	if err != nil {
+		fmt.Printf("error opening file: %v", err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
+
 	switch flag.NArg() {
 	case 0:
 		data, err = ioutil.ReadAll(os.Stdin)
