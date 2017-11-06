@@ -1,5 +1,6 @@
 # gntagger [![Doc Status][doc-img]][doc]
-Takes output from gnfinder and uses it to find false positives and false negatives in the result
+
+Finds names using gnfinder package internally and assists in interactive curation of dound scientific names
 
 [![Ascii Cast][asciicast-img]][asciicast]
 
