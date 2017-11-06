@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"strings"
 
 	"github.com/gnames/gnfinder"
 )
@@ -42,33 +41,18 @@ type Names struct {
 	Data gnfinder.OutputJSON
 }
 
-func (n *Names) String() string {
-	var current bool
-	names := n.Data.Names
-	namesTotal := len(names)
-	str := make([]string, len(names)*4)
-	for i, v := range names {
-		current = (i == n.Data.Meta.CurrentName)
-		for j, w := range nameStrings(&v, current, i+1, namesTotal) {
-			str[i*4+j] = w
-		}
-	}
-	return strings.Join(str, "\n")
-}
-
 func (n *Names) Save() error {
 	json := n.Data.ToJSON()
 	return ioutil.WriteFile(n.Path, json, 0644)
 }
 
-func nameStrings(n *gnfinder.NameJSON, current bool, i int,
-	total int) []string {
+func nameStrings(n *gnfinder.NameJSON, current bool, i int, total int) []string {
 	name := make([]string, 4)
 	nameString := n.Name
 	if current {
 		nameString = fmt.Sprintf("\033[43;30;1m%s\033[0m", nameString)
 	}
-	name[0] = fmt.Sprintf("    %d/%d", i, total)
+	name[0] = fmt.Sprintf("    %d/%d", i+1, total)
 	name[1] = fmt.Sprintf("Type: %s", n.Type)
 	name[2] = fmt.Sprintf("Name: %s", nameString)
 	name[3] = annotation(n.Annotation)
@@ -144,4 +128,8 @@ func PrepareText(path string) *Text {
 		log.Panicln(err)
 	}
 	return &Text{path, []rune(string(b)), 0}
+}
+
+func (names *Names) currentName() *gnfinder.NameJSON {
+	return &names.Data.Names[names.Data.Meta.CurrentName]
 }

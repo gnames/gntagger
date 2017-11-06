@@ -5,13 +5,16 @@ import (
 	"log"
 
 	"github.com/jroimartin/gocui"
+	"strings"
+	"github.com/atotto/clipboard"
 )
 
 var (
-	names     = &Names{}
-	text      = &Text{}
-	a         = Annotation{}
-	saveCount = 0
+	names                = &Names{}
+	text                 = &Text{}
+	a                    = Annotation{}
+	saveCount            = 0
+	nameViewCenterOffset = 0
 )
 
 func InitGUI(t *Text, n *Names) {
@@ -91,19 +94,17 @@ func Keybindings(g *gocui.Gui) error {
 }
 
 func Layout(g *gocui.Gui) error {
-	maxX, maxY := g.Size()
-
-	err := viewNames(g, maxX, maxY)
+	err := viewNames(g)
 	if err != nil {
 		return err
 	}
 
-	err = viewText(g, maxX, maxY)
+	err = viewText(g)
 	if err != nil {
 		return err
 	}
 
-	err = viewHelp(g, maxX, maxY)
+	err = viewHelp(g)
 	if err != nil {
 		return err
 	}
@@ -111,49 +112,32 @@ func Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func viewNames(g *gocui.Gui, maxX, maxY int) error {
+func viewNames(g *gocui.Gui) error {
+	_, maxY := g.Size()
 	if v, err := g.SetView("names", -1, 3, 35, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 		v.Title = "Names"
-		err := v.SetOrigin(0, 5)
-		if err != nil {
-			log.Panicln(err)
-		}
-		for i := 0; i <= maxY/2+1; i++ {
-			fmt.Fprintln(v)
-		}
-		fmt.Fprintln(v, names.String())
-		ox, oy := v.Origin()
-		err = v.SetOrigin(ox, oy+(4*names.Data.Meta.CurrentName))
-		if err != nil {
-			log.Panicln(err)
-		}
+		renderNamesView(g, v)
 	}
 	return nil
 }
 
-func viewText(g *gocui.Gui, maxX, maxY int) error {
+func viewText(g *gocui.Gui) error {
+	maxX, maxY := g.Size()
 	if v, err := g.SetView("text", 35, 3, maxX, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 		v.Title = "Text"
-		for i := 0; i <= maxY/2+2; i++ {
-			fmt.Fprintln(v)
-		}
-		fmt.Fprintf(v, "%s", text.Markup(names))
-
-		err := v.SetOrigin(0, text.OffsetY+3)
-		if err != gocui.ErrUnknownView {
-			return err
-		}
+		renderTextView(g, v)
 	}
 	return nil
 }
 
-func viewHelp(g *gocui.Gui, maxX, maxY int) error {
+func viewHelp(g *gocui.Gui) error {
+	maxX, maxY := g.Size()
 	if v, err := g.SetView("help", -1, maxY-2, maxX, maxY); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
@@ -231,16 +215,20 @@ func listForward(g *gocui.Gui, viewNames *gocui.View) error {
 			viewText = v
 		}
 	}
-	err = updateNamesView(g, viewNames, 1, a.Accepted())
-	if err != nil {
+	if err = updateNamesView(g, viewNames, 1, a.Accepted()); err != nil {
 		return err
 	}
-	err = updateText(g, viewText)
+	if err = renderTextView(g, viewText); err != nil {
+		return err
+	}
 	return err
 }
 
 func listBack(g *gocui.Gui, viewNames *gocui.View) error {
-	var viewText *gocui.View
+	var (
+		viewText *gocui.View
+		err      error
+	)
 	if names.Data.Meta.CurrentName == 0 {
 		return nil
 	}
@@ -251,53 +239,102 @@ func listBack(g *gocui.Gui, viewNames *gocui.View) error {
 			viewText = v
 		}
 	}
-	err := updateNamesView(g, viewNames, -1, "")
-	if err != nil {
+	if err = updateNamesView(g, viewNames, -1, ""); err != nil {
 		return err
 	}
-	err = updateText(g, viewText)
+	if err = renderTextView(g, viewText); err != nil {
+		return err
+	}
 	return err
 }
 
-func updateText(g *gocui.Gui, v *gocui.View) error {
+func renderTextView(g *gocui.Gui, v *gocui.View) error {
 	_, maxY := g.Size()
 	v.Clear()
-	for i := 0; i <= maxY/2+2; i++ {
-		fmt.Fprintln(v)
+
+	name := names.currentName()
+	cursorLeft := name.OffsetStart - 1
+	newLinesBefore := 0
+	for ; cursorLeft > 0 && newLinesBefore <= nameViewCenterOffset; cursorLeft-- {
+		if text.Original[cursorLeft] == '\n' {
+			newLinesBefore++
+		}
 	}
-	fmt.Fprintln(v, text.Markup(names))
-	err := v.SetOrigin(0, text.OffsetY+3)
+	newLinesAfter := 0
+	cursorRight := name.OffsetEnd + 1
+	for ; cursorRight < len(text.Original)-1 && newLinesAfter < maxY/2-1; cursorRight++ {
+		if text.Original[cursorRight] == '\n' {
+			newLinesAfter++
+		}
+	}
+	_, err := fmt.Fprintf(v, "%s\033[40;33;1m%s\033[0m%s",
+		string(text.Original[cursorLeft+1:name.OffsetStart]),
+		string(text.Original[name.OffsetStart:name.OffsetEnd]),
+		string(text.Original[name.OffsetEnd:cursorRight]),
+	)
 	return err
 }
 
-func updateNamesView(g *gocui.Gui, v *gocui.View,
-	increment int, annot string) error {
+func updateNamesView(g *gocui.Gui, v *gocui.View, step int, annot string) error {
+	var err error
 	saveCount++
-	if saveCount == 30 {
+	if saveCount >= 30 {
 		save(g, v)
 		saveCount = 0
 	}
-	_, maxY := g.Size()
-	name := &names.Data.Names[names.Data.Meta.CurrentName]
+	name := names.currentName()
 	if annot == a.Accepted() {
-		if increment == 1 && name.Annotation == "" {
+		if step == 1 && name.Annotation == "" {
 			name.Annotation = annot
-		} else if increment == 0 {
+		} else if step == 0 {
 			name.Annotation = annot
 		}
 	} else if annot != "" {
 		name.Annotation = annot
 	}
-	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 && increment == 1 {
-		increment = 0
+	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 && step == 1 {
+		step = 0
 	}
-	names.Data.Meta.CurrentName += increment
-	v.Clear()
-	for i := 0; i <= maxY/2+1; i++ {
-		fmt.Fprintln(v)
+	names.Data.Meta.CurrentName += step
+	if err = renderNamesView(g, v); err != nil {
+		return err
 	}
-	fmt.Fprintln(v, names.String())
-	ox, oy := v.Origin()
-	err := v.SetOrigin(ox, oy+(4*increment))
 	return err
+}
+
+func renderNamesView(g *gocui.Gui, v *gocui.View) error {
+	var err error
+	_, maxY := g.Size()
+	v.Clear()
+	namesTotal := len(names.Data.Names)
+	namesSliceWindow := (maxY - 2) / 4 / 2
+	nameViewCenterOffset = (namesSliceWindow+1)*4 - 2
+
+	namesSliceLeft := names.Data.Meta.CurrentName - namesSliceWindow
+	if namesSliceLeft < 0 {
+		namesSliceLeft = 0
+	}
+	namesSliceRight := names.Data.Meta.CurrentName + namesSliceWindow + 1
+	if namesSliceRight > namesTotal {
+		namesSliceRight = namesTotal
+	}
+	fmt.Fprintln(v)
+	for i := 0; i <= namesSliceWindow-names.Data.Meta.CurrentName-1; i++ {
+		for j := 0; j < 4; j++ {
+			fmt.Fprintln(v)
+		}
+	}
+	for i := namesSliceLeft; i < namesSliceRight; i++ {
+		current := i == names.Data.Meta.CurrentName
+		nm := names.Data.Names[i]
+		fmt.Fprintln(v, strings.Join(nameStrings(&nm, current, i, namesTotal), "\n"))
+	}
+	if err = copyCurrentNameToClipboard(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func copyCurrentNameToClipboard() error {
+	return clipboard.WriteAll(names.currentName().Name)
 }

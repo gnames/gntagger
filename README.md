@@ -1,6 +1,11 @@
 # gntagger [![Doc Status][doc-img]][doc]
 
-Finds names using gnfinder package internally and assists in interactive curation of dound scientific names
+Finds names using gnfinder package internally and assists in interactive
+curation of found scientific names
+
+The project is in its early stages. It is already quite useful for tagging
+`false positives`. We are working on adding fast methods for detecting
+`false negatives`.
 
 [![Ascii Cast][asciicast-img]][asciicast]
 
