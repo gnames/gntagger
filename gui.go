@@ -140,15 +140,7 @@ func viewText(g *gocui.Gui, maxX, maxY int) error {
 			return err
 		}
 		v.Title = "Text"
-		for i := 0; i <= maxY/2+2; i++ {
-			fmt.Fprintln(v)
-		}
-		fmt.Fprintf(v, "%s", text.Markup(names))
-
-		err := v.SetOrigin(0, text.OffsetY+3)
-		if err != gocui.ErrUnknownView {
-			return err
-		}
+		renderTextView(g, v)
 	}
 	return nil
 }
@@ -235,7 +227,7 @@ func listForward(g *gocui.Gui, viewNames *gocui.View) error {
 	if err != nil {
 		return err
 	}
-	err = updateText(g, viewText)
+	err = renderTextView(g, viewText)
 	return err
 }
 
@@ -255,18 +247,34 @@ func listBack(g *gocui.Gui, viewNames *gocui.View) error {
 	if err != nil {
 		return err
 	}
-	err = updateText(g, viewText)
+	err = renderTextView(g, viewText)
 	return err
 }
 
-func updateText(g *gocui.Gui, v *gocui.View) error {
+func renderTextView(g *gocui.Gui, v *gocui.View) error {
 	_, maxY := g.Size()
 	v.Clear()
-	for i := 0; i <= maxY/2+2; i++ {
+
+	name := names.currentName()
+	cursorLeft := name.OffsetStart
+	newLinesBefore := 0
+	for ; cursorLeft > 0 && newLinesBefore < maxY/2-1; cursorLeft-- {
+		newLinesBefore = newLinesNum(text.Original[cursorLeft:name.OffsetStart])
+	}
+	newLinesAfter := 0
+	cursorRight := name.OffsetEnd
+	for ; cursorRight < len(text.Original)-1 && newLinesAfter < maxY/2-1; cursorRight++ {
+		newLinesAfter = newLinesNum(text.Original[name.OffsetEnd:cursorRight])
+	}
+
+	for i := 0; i <= maxY/2-newLinesBefore-1; i++ {
 		fmt.Fprintln(v)
 	}
-	fmt.Fprintln(v, text.Markup(names))
-	err := v.SetOrigin(0, text.OffsetY+3)
+	_, err := fmt.Fprintf(v, "%s\033[40;33;1m%s\033[0m%s",
+		string(text.Original[cursorLeft:name.OffsetStart]),
+		string(text.Original[name.OffsetStart:name.OffsetEnd]),
+		string(text.Original[name.OffsetEnd:cursorRight]),
+	)
 	return err
 }
 
