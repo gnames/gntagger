@@ -278,7 +278,7 @@ func updateNamesView(g *gocui.Gui, v *gocui.View,
 		saveCount = 0
 	}
 	_, maxY := g.Size()
-	name := &names.Data.Names[names.Data.Meta.CurrentName]
+	name := names.currentName()
 	if annot == a.Accepted() {
 		if increment == 1 && name.Annotation == "" {
 			name.Annotation = annot

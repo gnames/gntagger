@@ -145,3 +145,7 @@ func PrepareText(path string) *Text {
 	}
 	return &Text{path, []rune(string(b)), 0}
 }
+
+func (names *Names) currentName() *gnfinder.NameJSON {
+	return &names.Data.Names[names.Data.Meta.CurrentName]
+}
