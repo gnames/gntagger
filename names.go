@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"strings"
 
 	"github.com/gnames/gnfinder"
 )
@@ -42,18 +41,29 @@ type Names struct {
 	Data gnfinder.OutputJSON
 }
 
-func (n *Names) String() string {
-	var current bool
-	names := n.Data.Names
-	namesTotal := len(names)
-	str := make([]string, len(names)*4)
-	for i, v := range names {
-		current = (i == n.Data.Meta.CurrentName)
-		for j, w := range nameStrings(&v, current, i+1, namesTotal) {
-			str[i*4+j] = w
+func (n *Names) Strings() []string {
+	namesTotal := len(n.Data.Names)
+	namesSliceWindow := 5
+	namesSliceLeft := names.Data.Meta.CurrentName - namesSliceWindow
+	if namesSliceLeft < 0 {
+		namesSliceLeft = 0
+	}
+	namesSliceRight := names.Data.Meta.CurrentName + namesSliceWindow
+	if namesSliceRight > namesTotal {
+		namesSliceRight = namesTotal
+	}
+	log.Printf("%d %d", namesSliceLeft, namesSliceRight)
+
+	//namesSlice := n.Data.Names[namesSliceLeft:namesSliceRight]
+	str := make([]string, (namesSliceRight - namesSliceLeft)*4)
+	for i := namesSliceLeft; i < namesSliceRight; i++ {
+		current := i == n.Data.Meta.CurrentName
+		v := names.Data.Names[i]
+		for j, w := range nameStrings(&v, current, i, namesTotal) {
+			str[(i-namesSliceLeft)*4+j] = w
 		}
 	}
-	return strings.Join(str, "\n")
+	return str
 }
 
 func (n *Names) Save() error {
@@ -61,8 +71,7 @@ func (n *Names) Save() error {
 	return ioutil.WriteFile(n.Path, json, 0644)
 }
 
-func nameStrings(n *gnfinder.NameJSON, current bool, i int,
-	total int) []string {
+func nameStrings(n *gnfinder.NameJSON, current bool, i int, total int) []string {
 	name := make([]string, 4)
 	nameString := n.Name
 	if current {

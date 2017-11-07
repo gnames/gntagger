@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/jroimartin/gocui"
+	"strings"
 )
 
 var (
@@ -116,19 +117,7 @@ func viewNames(g *gocui.Gui) error {
 			return err
 		}
 		v.Title = "Names"
-		err := v.SetOrigin(0, 5)
-		if err != nil {
-			log.Panicln(err)
-		}
-		for i := 0; i <= maxY/2+1; i++ {
-			fmt.Fprintln(v)
-		}
-		fmt.Fprintln(v, names.String())
-		ox, oy := v.Origin()
-		err = v.SetOrigin(ox, oy+(4*names.Data.Meta.CurrentName))
-		if err != nil {
-			log.Panicln(err)
-		}
+		renderNamesView(g, v)
 	}
 	return nil
 }
@@ -268,7 +257,7 @@ func renderTextView(g *gocui.Gui, v *gocui.View) error {
 		newLinesAfter = newLinesNum(text.Original[name.OffsetEnd:cursorRight])
 	}
 
-	for i := 0; i <= maxY/2-newLinesBefore-1; i++ {
+	for i := 0; i <= maxY/2-newLinesBefore; i++ {
 		fmt.Fprintln(v)
 	}
 	_, err := fmt.Fprintf(v, "%s\033[40;33;1m%s\033[0m%s",
@@ -279,14 +268,12 @@ func renderTextView(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 
-func updateNamesView(g *gocui.Gui, v *gocui.View,
-	increment int, annot string) error {
+func updateNamesView(g *gocui.Gui, v *gocui.View, increment int, annot string) error {
 	saveCount++
-	if saveCount == 30 {
+	if saveCount >= 30 {
 		save(g, v)
 		saveCount = 0
 	}
-	_, maxY := g.Size()
 	name := names.currentName()
 	if annot == a.Accepted() {
 		if increment == 1 && name.Annotation == "" {
@@ -301,12 +288,33 @@ func updateNamesView(g *gocui.Gui, v *gocui.View,
 		increment = 0
 	}
 	names.Data.Meta.CurrentName += increment
+	renderNamesView(g, v)
+	return nil
+}
+
+func renderNamesView(g *gocui.Gui, v *gocui.View) error {
+	_, maxY := g.Size()
 	v.Clear()
-	for i := 0; i <= maxY/2+1; i++ {
-		fmt.Fprintln(v)
+	namesTotal := len(names.Data.Names)
+	namesSliceWindow := (maxY - 2) / 4 / 2
+	namesSliceLeft := names.Data.Meta.CurrentName - namesSliceWindow
+	if namesSliceLeft < 0 {
+		namesSliceLeft = 0
 	}
-	fmt.Fprintln(v, names.String())
-	ox, oy := v.Origin()
-	err := v.SetOrigin(ox, oy+(4*increment))
-	return err
+	namesSliceRight := names.Data.Meta.CurrentName + namesSliceWindow
+	if namesSliceRight > namesTotal {
+		namesSliceRight = namesTotal
+	}
+	fmt.Fprintln(v)
+	for i := 0; i <= namesSliceWindow-names.Data.Meta.CurrentName-1; i++ {
+		for j := 0; j < 4; j++ {
+			fmt.Fprintln(v)
+		}
+	}
+	for i := namesSliceLeft; i < namesSliceRight; i++ {
+		current := i == names.Data.Meta.CurrentName
+		nm := names.Data.Names[i]
+		fmt.Fprintln(v, strings.Join(nameStrings(&nm, current, i, namesTotal), "\n"))
+	}
+	return nil
 }
