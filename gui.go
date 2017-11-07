@@ -268,7 +268,7 @@ func renderTextView(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 
-func updateNamesView(g *gocui.Gui, v *gocui.View, increment int, annot string) error {
+func updateNamesView(g *gocui.Gui, v *gocui.View, step int, annot string) error {
 	saveCount++
 	if saveCount >= 30 {
 		save(g, v)
@@ -276,18 +276,18 @@ func updateNamesView(g *gocui.Gui, v *gocui.View, increment int, annot string) e
 	}
 	name := names.currentName()
 	if annot == a.Accepted() {
-		if increment == 1 && name.Annotation == "" {
+		if step == 1 && name.Annotation == "" {
 			name.Annotation = annot
-		} else if increment == 0 {
+		} else if step == 0 {
 			name.Annotation = annot
 		}
 	} else if annot != "" {
 		name.Annotation = annot
 	}
-	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 && increment == 1 {
-		increment = 0
+	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 && step == 1 {
+		step = 0
 	}
-	names.Data.Meta.CurrentName += increment
+	names.Data.Meta.CurrentName += step
 	renderNamesView(g, v)
 	return nil
 }
