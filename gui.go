@@ -6,6 +6,7 @@ import (
 
 	"github.com/jroimartin/gocui"
 	"strings"
+	"github.com/tjgq/clipboard"
 )
 
 var (
@@ -213,16 +214,20 @@ func listForward(g *gocui.Gui, viewNames *gocui.View) error {
 			viewText = v
 		}
 	}
-	err = updateNamesView(g, viewNames, 1, a.Accepted())
-	if err != nil {
+	if err = updateNamesView(g, viewNames, 1, a.Accepted()); err != nil {
 		return err
 	}
-	err = renderTextView(g, viewText)
+	if err = renderTextView(g, viewText); err != nil {
+		return err
+	}
 	return err
 }
 
 func listBack(g *gocui.Gui, viewNames *gocui.View) error {
-	var viewText *gocui.View
+	var (
+		viewText *gocui.View
+		err      error
+	)
 	if names.Data.Meta.CurrentName == 0 {
 		return nil
 	}
@@ -233,11 +238,12 @@ func listBack(g *gocui.Gui, viewNames *gocui.View) error {
 			viewText = v
 		}
 	}
-	err := updateNamesView(g, viewNames, -1, "")
-	if err != nil {
+	if err = updateNamesView(g, viewNames, -1, ""); err != nil {
 		return err
 	}
-	err = renderTextView(g, viewText)
+	if err = renderTextView(g, viewText); err != nil {
+		return err
+	}
 	return err
 }
 
@@ -269,6 +275,7 @@ func renderTextView(g *gocui.Gui, v *gocui.View) error {
 }
 
 func updateNamesView(g *gocui.Gui, v *gocui.View, step int, annot string) error {
+	var err error
 	saveCount++
 	if saveCount >= 30 {
 		save(g, v)
@@ -288,11 +295,14 @@ func updateNamesView(g *gocui.Gui, v *gocui.View, step int, annot string) error 
 		step = 0
 	}
 	names.Data.Meta.CurrentName += step
-	renderNamesView(g, v)
-	return nil
+	if err = renderNamesView(g, v); err != nil {
+		return err
+	}
+	return err
 }
 
 func renderNamesView(g *gocui.Gui, v *gocui.View) error {
+	var err error
 	_, maxY := g.Size()
 	v.Clear()
 	namesTotal := len(names.Data.Names)
@@ -316,5 +326,12 @@ func renderNamesView(g *gocui.Gui, v *gocui.View) error {
 		nm := names.Data.Names[i]
 		fmt.Fprintln(v, strings.Join(nameStrings(&nm, current, i, namesTotal), "\n"))
 	}
+	if err = copyCurrentNameToClipboard(); err != nil {
+		return err
+	}
 	return nil
+}
+
+func copyCurrentNameToClipboard() error {
+	return clipboard.Set(names.currentName().Name)
 }
