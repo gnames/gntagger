@@ -10,10 +10,11 @@ import (
 )
 
 var (
-	names     = &Names{}
-	text      = &Text{}
-	a         = Annotation{}
-	saveCount = 0
+	names                = &Names{}
+	text                 = &Text{}
+	a                    = Annotation{}
+	saveCount            = 0
+	nameViewCenterOffset = 0
 )
 
 func InitGUI(t *Text, n *Names) {
@@ -252,22 +253,22 @@ func renderTextView(g *gocui.Gui, v *gocui.View) error {
 	v.Clear()
 
 	name := names.currentName()
-	cursorLeft := name.OffsetStart
+	cursorLeft := name.OffsetStart - 1
 	newLinesBefore := 0
-	for ; cursorLeft > 0 && newLinesBefore < maxY/2-1; cursorLeft-- {
-		newLinesBefore = newLinesNum(text.Original[cursorLeft:name.OffsetStart])
+	for ; cursorLeft > 0 && newLinesBefore <= nameViewCenterOffset; cursorLeft-- {
+		if text.Original[cursorLeft] == '\n' {
+			newLinesBefore++
+		}
 	}
 	newLinesAfter := 0
-	cursorRight := name.OffsetEnd
+	cursorRight := name.OffsetEnd + 1
 	for ; cursorRight < len(text.Original)-1 && newLinesAfter < maxY/2-1; cursorRight++ {
-		newLinesAfter = newLinesNum(text.Original[name.OffsetEnd:cursorRight])
-	}
-
-	for i := 0; i <= maxY/2-newLinesBefore; i++ {
-		fmt.Fprintln(v)
+		if text.Original[cursorRight] == '\n' {
+			newLinesAfter++
+		}
 	}
 	_, err := fmt.Fprintf(v, "%s\033[40;33;1m%s\033[0m%s",
-		string(text.Original[cursorLeft:name.OffsetStart]),
+		string(text.Original[cursorLeft+1:name.OffsetStart]),
 		string(text.Original[name.OffsetStart:name.OffsetEnd]),
 		string(text.Original[name.OffsetEnd:cursorRight]),
 	)
@@ -307,11 +308,13 @@ func renderNamesView(g *gocui.Gui, v *gocui.View) error {
 	v.Clear()
 	namesTotal := len(names.Data.Names)
 	namesSliceWindow := (maxY - 2) / 4 / 2
+	nameViewCenterOffset = (namesSliceWindow+1)*4 - 2
+
 	namesSliceLeft := names.Data.Meta.CurrentName - namesSliceWindow
 	if namesSliceLeft < 0 {
 		namesSliceLeft = 0
 	}
-	namesSliceRight := names.Data.Meta.CurrentName + namesSliceWindow
+	namesSliceRight := names.Data.Meta.CurrentName + namesSliceWindow + 1
 	if namesSliceRight > namesTotal {
 		namesSliceRight = namesTotal
 	}
