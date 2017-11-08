@@ -52,7 +52,7 @@ func nameStrings(n *gnfinder.NameJSON, current bool, i int, total int) []string 
 	if current {
 		nameString = fmt.Sprintf("\033[43;30;1m%s\033[0m", nameString)
 	}
-	name[0] = fmt.Sprintf("    %d/%d", i, total)
+	name[0] = fmt.Sprintf("    %d/%d", i+1, total)
 	name[1] = fmt.Sprintf("Type: %s", n.Type)
 	name[2] = fmt.Sprintf("Name: %s", nameString)
 	name[3] = annotation(n.Annotation)
