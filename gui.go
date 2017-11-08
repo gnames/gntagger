@@ -6,7 +6,7 @@ import (
 
 	"github.com/jroimartin/gocui"
 	"strings"
-	"github.com/tjgq/clipboard"
+	"github.com/atotto/clipboard"
 )
 
 var (
@@ -336,5 +336,5 @@ func renderNamesView(g *gocui.Gui, v *gocui.View) error {
 }
 
 func copyCurrentNameToClipboard() error {
-	return clipboard.Set(names.currentName().Name)
+	return clipboard.WriteAll(names.currentName().Name)
 }
