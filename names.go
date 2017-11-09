@@ -113,8 +113,6 @@ type Text struct {
 	Path string
 	// Content of the file converted to runes
 	Original []rune
-	// Vertical offset of the text to align it with name
-	OffsetY int
 }
 
 func (t *Text) Markup(n *Names) string {
@@ -125,18 +123,7 @@ func (t *Text) Markup(n *Names) string {
 	markup = append(markup, t.Original[name.OffsetStart:name.OffsetEnd]...)
 	markup = append(markup, []rune("\033[0m")...)
 	markup = append(markup, t.Original[name.OffsetEnd:len(t.Original)]...)
-	t.OffsetY = newLinesNum(t.Original[0:name.OffsetStart])
 	return string(markup)
-}
-
-func newLinesNum(rs []rune) int {
-	offset := 1
-	for _, v := range rs {
-		if v == '\n' || v == '\v' {
-			offset++
-		}
-	}
-	return offset
 }
 
 func PrepareText(path string) *Text {
@@ -144,7 +131,7 @@ func PrepareText(path string) *Text {
 	if err != nil {
 		log.Panicln(err)
 	}
-	return &Text{path, []rune(string(b)), 0}
+	return &Text{path, []rune(string(b))}
 }
 
 func (names *Names) currentName() *gnfinder.NameJSON {

@@ -198,7 +198,7 @@ func setKey(g *gocui.Gui, v *gocui.View, annotationId AnnotationId) error {
 		}
 	}
 	names.currentName().Annotation = annotationId.name()
-	err := updateNamesView(g, v)
+	err := renderNamesView(g, v)
 	return err
 }
 
@@ -224,7 +224,7 @@ func listForward(g *gocui.Gui, viewNames *gocui.View) error {
 		step = 0
 	}
 	names.Data.Meta.CurrentName += step
-	if err = updateNamesView(g, viewNames); err != nil {
+	if err = renderNamesView(g, viewNames); err != nil {
 		return err
 	}
 	if err = renderTextView(g, viewText); err != nil {
@@ -249,7 +249,7 @@ func listBack(g *gocui.Gui, viewNames *gocui.View) error {
 		}
 	}
 	names.Data.Meta.CurrentName -= 1
-	if err = updateNamesView(g, viewNames); err != nil {
+	if err = renderNamesView(g, viewNames); err != nil {
 		return err
 	}
 	if err = renderTextView(g, viewText); err != nil {
@@ -285,21 +285,13 @@ func renderTextView(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 
-func updateNamesView(g *gocui.Gui, v *gocui.View) error {
+func renderNamesView(g *gocui.Gui, v *gocui.View) error {
 	var err error
 	saveCount++
 	if saveCount >= 30 {
 		save(g, v)
 		saveCount = 0
 	}
-	if err = renderNamesView(g, v); err != nil {
-		return err
-	}
-	return err
-}
-
-func renderNamesView(g *gocui.Gui, v *gocui.View) error {
-	var err error
 	_, maxY := g.Size()
 	v.Clear()
 	namesTotal := len(names.Data.Names)
