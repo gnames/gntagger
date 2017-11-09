@@ -8,37 +8,33 @@ import (
 	"github.com/gnames/gnfinder"
 )
 
-type Annotation struct{}
+type AnnotationId int
 
-func (a *Annotation) NotName() string {
-	return "NotName"
-}
-
-func (a *Annotation) Accepted() string {
-	return "Accepted"
-}
-
-func (a *Annotation) Uninomial() string {
-	return "Uninomial"
-}
-
-func (a *Annotation) Genus() string {
-	return "Genus"
-}
-
-func (a *Annotation) Species() string {
-	return "Species"
-}
-
-func (a *Annotation) Doubtful() string {
-	return "Doubtful"
-}
+const (
+	AnnotationNotAssigned AnnotationId = iota
+	AnnotationNotName
+	AnnotationAccepted
+	AnnotationUninomial
+	AnnotationGenus
+	AnnotationSpecies
+	AnnotationDoubtful
+)
 
 type Names struct {
 	// Path to json file with names
 	Path string
 	// Data is a gnfinder output
 	Data gnfinder.OutputJSON
+}
+
+var annotationNames = []string{
+	"",
+	"NotName",
+	"Accepted",
+	"Uninomial",
+	"Genus",
+	"Species",
+	"Doubtful",
 }
 
 func (n *Names) Save() error {
@@ -55,30 +51,51 @@ func nameStrings(n *gnfinder.NameJSON, current bool, i int, total int) []string 
 	name[0] = fmt.Sprintf("    %d/%d", i+1, total)
 	name[1] = fmt.Sprintf("Type: %s", n.Type)
 	name[2] = fmt.Sprintf("Name: %s", nameString)
-	name[3] = annotation(n.Annotation)
+	name[3] = annotationOfName(n.Annotation).formatString()
 	return name
 }
 
-func annotation(a string) string {
-	var color int
-	annotation := Annotation{}
-	switch a {
-	case annotation.Accepted():
-		color = 32 //green
-	case annotation.NotName():
-		color = 31 //red
-	case annotation.Doubtful():
-		color = 37 //light grey
-	case annotation.Species():
-		color = 35 //magenta
-	case annotation.Genus():
-		color = 35 //magenta
-	case annotation.Uninomial():
-		color = 35 //magenta
-	default:
-		color = 33
+func annotationOfName(annotationName string) AnnotationId {
+	if annotationName == "NotAssigned" {
+		return AnnotationNotAssigned
 	}
-	return fmt.Sprintf("\033[%d;40;2mAnnot: %s\033[0m", color, a)
+	for idx, an := range annotationNames {
+		if an == annotationName {
+			return AnnotationId(idx)
+		}
+	}
+	return AnnotationNotAssigned
+}
+
+func (annotation AnnotationId) color() int {
+	switch annotation {
+	case AnnotationAccepted:
+		return 32 //green
+	case AnnotationNotName:
+		return 31 //red
+	case AnnotationDoubtful:
+		return 37 //light grey
+	case AnnotationSpecies:
+		return 35 //magenta
+	case AnnotationGenus:
+		return 35 //magenta
+	case AnnotationUninomial:
+		return 35 //magenta
+	case AnnotationNotAssigned:
+	default:
+		return 33
+	}
+	return 33
+}
+
+func (annotation AnnotationId) name() string {
+	return annotationNames[int(annotation)]
+}
+
+func (annotation AnnotationId) formatString() string {
+	color := annotation.color()
+	name := annotation.name()
+	return fmt.Sprintf("\033[%d;40;2mAnnot: %s\033[0m", color, name)
 }
 
 func NamesFromJSON(path string) *Names {

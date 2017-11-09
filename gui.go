@@ -12,7 +12,6 @@ import (
 var (
 	names                = &Names{}
 	text                 = &Text{}
-	a                    = Annotation{}
 	saveCount            = 0
 	nameViewCenterOffset = 0
 )
@@ -162,43 +161,44 @@ func save(g *gocui.Gui, v *gocui.View) error {
 }
 
 func speciesName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, a.Species())
+	err := setKey(g, v, AnnotationSpecies)
 	return err
 }
 
 func genusName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, a.Genus())
+	err := setKey(g, v, AnnotationGenus)
 	return err
 }
 
 func uninomialName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, a.Uninomial())
+	err := setKey(g, v, AnnotationUninomial)
 	return err
 }
 
 func doubtfulName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, a.Doubtful())
+	err := setKey(g, v, AnnotationDoubtful)
 	return err
 }
 
 func yesName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, a.Accepted())
+	err := setKey(g, v, AnnotationAccepted)
 	return err
 }
 
 func noName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, a.NotName())
+	err := setKey(g, v, AnnotationNotName)
 	return err
 }
 
-func setKey(g *gocui.Gui, v *gocui.View, annot string) error {
+func setKey(g *gocui.Gui, v *gocui.View, annotationId AnnotationId) error {
 	for _, view := range g.Views() {
 		if view.Name() == "names" {
 			v = view
 			break
 		}
 	}
-	err := updateNamesView(g, v, 0, annot)
+	names.currentName().Annotation = annotationId.name()
+	err := updateNamesView(g, v)
 	return err
 }
 
@@ -215,7 +215,16 @@ func listForward(g *gocui.Gui, viewNames *gocui.View) error {
 			viewText = v
 		}
 	}
-	if err = updateNamesView(g, viewNames, 1, a.Accepted()); err != nil {
+	name := names.currentName()
+	if annotationOfName(name.Annotation) == AnnotationNotAssigned {
+		name.Annotation = AnnotationAccepted.name()
+	}
+	step := 1
+	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 {
+		step = 0
+	}
+	names.Data.Meta.CurrentName += step
+	if err = updateNamesView(g, viewNames); err != nil {
 		return err
 	}
 	if err = renderTextView(g, viewText); err != nil {
@@ -239,7 +248,8 @@ func listBack(g *gocui.Gui, viewNames *gocui.View) error {
 			viewText = v
 		}
 	}
-	if err = updateNamesView(g, viewNames, -1, ""); err != nil {
+	names.Data.Meta.CurrentName -= 1
+	if err = updateNamesView(g, viewNames); err != nil {
 		return err
 	}
 	if err = renderTextView(g, viewText); err != nil {
@@ -275,27 +285,13 @@ func renderTextView(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 
-func updateNamesView(g *gocui.Gui, v *gocui.View, step int, annot string) error {
+func updateNamesView(g *gocui.Gui, v *gocui.View) error {
 	var err error
 	saveCount++
 	if saveCount >= 30 {
 		save(g, v)
 		saveCount = 0
 	}
-	name := names.currentName()
-	if annot == a.Accepted() {
-		if step == 1 && name.Annotation == "" {
-			name.Annotation = annot
-		} else if step == 0 {
-			name.Annotation = annot
-		}
-	} else if annot != "" {
-		name.Annotation = annot
-	}
-	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 && step == 1 {
-		step = 0
-	}
-	names.Data.Meta.CurrentName += step
 	if err = renderNamesView(g, v); err != nil {
 		return err
 	}
