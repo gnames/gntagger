@@ -39,53 +39,53 @@ func InitGUI(t *Text, n *Names) {
 }
 
 func Keybindings(g *gocui.Gui) error {
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
-		quit); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit);
+		err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone,
-		save); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone, save);
+		err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone,
-		listBack); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone, listBack);
+		err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone,
-		listForward); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone, listForward);
+		err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeySpace, gocui.ModNone,
-		noName); err != nil {
+	if err := g.SetKeybinding("", gocui.KeySpace, gocui.ModNone, noName);
+		err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'y', gocui.ModNone,
-		yesName); err != nil {
+	if err := g.SetKeybinding("", 'y', gocui.ModNone, yesName);
+		err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 's', gocui.ModNone,
-		speciesName); err != nil {
+	if err := g.SetKeybinding("", 's', gocui.ModNone, speciesName);
+		err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'g', gocui.ModNone,
-		genusName); err != nil {
+	if err := g.SetKeybinding("", 'g', gocui.ModNone, genusName);
+		err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'u', gocui.ModNone,
-		uninomialName); err != nil {
+	if err := g.SetKeybinding("", 'u', gocui.ModNone, uninomialName);
+		err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'd', gocui.ModNone,
-		doubtfulName); err != nil {
+	if err := g.SetKeybinding("", 'd', gocui.ModNone, doubtfulName);
+		err != nil {
 		return err
 	}
 
@@ -145,7 +145,7 @@ func viewHelp(g *gocui.Gui) error {
 		v.BgColor = gocui.ColorWhite
 		v.FgColor = gocui.ColorBlack
 		fmt.Fprintln(v,
-			"→ (yes*) next, ← back, Space no, y yes, s species, " +
+			"→ (yes*) next, ← back, Space no, y yes, s species, "+
 				"g genus, u uninomial, d doubt, ^S save, ^C exit")
 	}
 	return nil
@@ -161,37 +161,37 @@ func save(_ *gocui.Gui, _ *gocui.View) error {
 	return err
 }
 
-func speciesName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, AnnotationSpecies)
+func speciesName(g *gocui.Gui, _ *gocui.View) error {
+	err := setKey(g, AnnotationSpecies)
 	return err
 }
 
-func genusName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, AnnotationGenus)
+func genusName(g *gocui.Gui, _ *gocui.View) error {
+	err := setKey(g, AnnotationGenus)
 	return err
 }
 
-func uninomialName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, AnnotationUninomial)
+func uninomialName(g *gocui.Gui, _ *gocui.View) error {
+	err := setKey(g, AnnotationUninomial)
 	return err
 }
 
-func doubtfulName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, AnnotationDoubtful)
+func doubtfulName(g *gocui.Gui, _ *gocui.View) error {
+	err := setKey(g, AnnotationDoubtful)
 	return err
 }
 
-func yesName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, AnnotationAccepted)
+func yesName(g *gocui.Gui, _ *gocui.View) error {
+	err := setKey(g, AnnotationAccepted)
 	return err
 }
 
-func noName(g *gocui.Gui, v *gocui.View) error {
-	err := setKey(g, v, AnnotationNotName)
+func noName(g *gocui.Gui, _ *gocui.View) error {
+	err := setKey(g, AnnotationNotName)
 	return err
 }
 
-func setKey(g *gocui.Gui, _ *gocui.View, annotationId AnnotationId) error {
+func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 	var err error
 	names.currentName().Annotation = annotationId.name()
 	if err = renderNamesView(g); err != nil {
