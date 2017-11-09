@@ -10,10 +10,11 @@ import (
 )
 
 var (
-	names                = &Names{}
-	text                 = &Text{}
-	saveCount            = 0
-	nameViewCenterOffset = 0
+	names                 = &Names{}
+	text                  = &Text{}
+	saveCount             = 0
+	nameViewCenterOffset  = 0
+	lastReviewedNameIndex = 0
 )
 
 func InitGUI(t *Text, n *Names) {
@@ -24,6 +25,13 @@ func InitGUI(t *Text, n *Names) {
 		log.Panicln(err)
 	}
 	defer g.Close()
+
+	for i, n := range names.Data.Names {
+		lastReviewedNameIndex = i
+		if annotationOfName(n.Annotation) == AnnotationNotAssigned {
+			break
+		}
+	}
 
 	g.Cursor = true
 
@@ -194,6 +202,27 @@ func noName(g *gocui.Gui, _ *gocui.View) error {
 func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 	var err error
 	names.currentName().Annotation = annotationId.name()
+
+	if names.Data.Meta.CurrentName == lastReviewedNameIndex {
+		if annotationId == AnnotationNotName {
+			for i := lastReviewedNameIndex + 1; i < len(names.Data.Names); i++ {
+				name := &names.Data.Names[i]
+				if names.currentName().Name == name.Name &&
+					annotationOfName(name.Annotation) == AnnotationNotAssigned {
+					name.Annotation = AnnotationNotName.name()
+				}
+			}
+		} else if annotationId != AnnotationNotAssigned {
+			for i := lastReviewedNameIndex + 1; i < len(names.Data.Names); i++ {
+				name := &names.Data.Names[i]
+				if names.currentName().Name == name.Name &&
+					annotationOfName(name.Annotation) == AnnotationNotName {
+					name.Annotation = AnnotationNotAssigned.name()
+				}
+			}
+		}
+	}
+
 	if err = renderNamesView(g); err != nil {
 		return err
 	}
@@ -214,6 +243,9 @@ func listForward(g *gocui.Gui, _ *gocui.View) error {
 		step = 0
 	}
 	names.Data.Meta.CurrentName += step
+	if names.Data.Meta.CurrentName > lastReviewedNameIndex {
+		lastReviewedNameIndex = names.Data.Meta.CurrentName
+	}
 	if err = renderNamesView(g); err != nil {
 		return err
 	}
