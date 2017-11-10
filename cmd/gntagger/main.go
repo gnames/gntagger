@@ -28,10 +28,24 @@ func main() {
 		flag.PrintDefaults()
 	}
 
-	var path string
+	var (
+		path string
+		data []byte
+		err  error
+	)
 	flag.Parse()
-	var data []byte
-	var err error
+
+	stdInFile := os.Stdin
+	fi, _ := stdInFile.Stat()
+	if err != nil {
+		log.Panicln("file.Stat()", err)
+	}
+	size := fi.Size()
+	if size == 0 {
+		fmt.Println("Stdin is empty. Printing usage")
+		flag.Usage()
+		return
+	}
 
 	switch flag.NArg() {
 	case 0:
