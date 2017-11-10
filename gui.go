@@ -279,7 +279,7 @@ func renderTextView(g *gocui.Gui) error {
 	name := names.currentName()
 	cursorLeft := name.OffsetStart - 1
 	newLinesBefore := 0
-	for ; cursorLeft > 0 && newLinesBefore <= nameViewCenterOffset; cursorLeft-- {
+	for ; cursorLeft >= 0 && newLinesBefore <= nameViewCenterOffset; cursorLeft-- {
 		if text.Original[cursorLeft] == '\n' {
 			newLinesBefore++
 		}
@@ -295,12 +295,18 @@ func renderTextView(g *gocui.Gui) error {
 	if annotationOfName(name.Annotation) == AnnotationNotName {
 		color = AnnotationNotName.color()
 	}
+	for i := 0; i <= nameViewCenterOffset - newLinesBefore; i++ {
+		fmt.Fprintln(viewText)
+	}
 	_, err = fmt.Fprintf(viewText, "%s\033[40;%d;1m%s\033[0m%s",
 		string(text.Original[cursorLeft+1:name.OffsetStart]),
 		color,
 		string(text.Original[name.OffsetStart:name.OffsetEnd]),
 		string(text.Original[name.OffsetEnd:cursorRight]),
 	)
+	for i := 0; i <= newLinesAfter - nameViewCenterOffset + 1; i++ {
+		fmt.Fprintln(viewText)
+	}
 	return err
 }
 
