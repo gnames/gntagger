@@ -83,8 +83,7 @@ func prepareFilepaths(path string) (string, string) {
 		return "./gntagger_input", file
 	}
 	d, f := filepath.Split(path)
-	ext := filepath.Ext(f)
-	dir := filepath.Join(d, f[0:len(f)-len(ext)])
+	dir := filepath.Join(d, f + "_input")
 	return dir, file
 }
 
