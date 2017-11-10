@@ -18,8 +18,8 @@ func main() {
 		help := "Usage of %s:\n\n%s file_with_names\n\nor\n\n" +
 			"cat file | %s\n\n" +
 			"If the input is a file, the results will be placed " +
-			"next to the file under a directory with the same name " +
-			"as the file.\n" +
+			"next to the file under a directory with the name " +
+			"\"your_file_name_input\" .\n" +
 			"If the input compes from a pipe the results will be located in " +
 			"a ./gntagger_input directory.\n\n" +
 			"Documentation: https://godoc.org/github.com/gnames/gntagger\n\n"
@@ -83,7 +83,7 @@ func prepareFilepaths(path string) (string, string) {
 		return "./gntagger_input", file
 	}
 	d, f := filepath.Split(path)
-	dir := filepath.Join(d, f + "_input")
+	dir := filepath.Join(d, f+"_input")
 	return dir, file
 }
 
