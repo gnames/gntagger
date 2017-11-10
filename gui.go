@@ -203,7 +203,7 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 	var err error
 	names.currentName().Annotation = annotationId.name()
 
-	if names.Data.Meta.CurrentName == lastReviewedNameIndex {
+	if names.Data.Meta.CurrentName >= lastReviewedNameIndex - 3 {
 		if annotationId == AnnotationNotName {
 			for i := lastReviewedNameIndex + 1; i < len(names.Data.Names); i++ {
 				name := &names.Data.Names[i]
