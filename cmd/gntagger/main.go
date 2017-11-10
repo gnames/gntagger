@@ -35,23 +35,16 @@ func main() {
 	)
 	flag.Parse()
 
-	stdInFile := os.Stdin
-	fi, _ := stdInFile.Stat()
-	if err != nil {
-		log.Panicln("file.Stat()", err)
-	}
-	size := fi.Size()
-	if size == 0 {
-		fmt.Println("Stdin is empty. Printing usage")
-		flag.Usage()
-		return
-	}
-
 	switch flag.NArg() {
 	case 0:
-		data, err = ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			log.Panic(err)
+		if ok := checkStdin(); ok {
+			data, err = ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				log.Panic(err)
+			}
+		} else {
+			flag.Usage()
+			os.Exit(0)
 		}
 	case 1:
 		path = flag.Arg(0)
@@ -75,6 +68,15 @@ func main() {
 	}
 
 	InitGUI(txt, names)
+}
+
+func checkStdin() bool {
+	stdInFile := os.Stdin
+	stat, err := stdInFile.Stat()
+	if err != nil {
+		log.Panic(err)
+	}
+	return (stat.Mode() & os.ModeCharDevice) == 0
 }
 
 func prepareData(text []byte, path string) (*Text, *Names) {
