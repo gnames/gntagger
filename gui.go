@@ -29,7 +29,11 @@ func InitGUI(t *Text, n *Names) {
 
 	for i, n := range names.Data.Names {
 		lastReviewedNameIndex = i
-		if annotationOfName(n.Annotation) == AnnotationNotAssigned {
+		annotationName, err := annotationOfName(n.Annotation)
+		if err != nil {
+			log.Panicln(err)
+		}
+		if annotationName == AnnotationNotAssigned {
 			break
 		}
 	}
@@ -92,21 +96,23 @@ func Keybindings(g *gocui.Gui) error {
 }
 
 func Layout(g *gocui.Gui) error {
-	err := viewNames(g)
-	if err != nil {
+	var err error
+
+	if err = viewStats(g); err != nil {
 		return err
 	}
 
-	err = viewText(g)
-	if err != nil {
+	if err = viewNames(g); err != nil {
 		return err
 	}
 
-	err = viewHelp(g)
-	if err != nil {
+	if err = viewText(g); err != nil {
 		return err
 	}
 
+	if err = viewHelp(g); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -130,6 +136,18 @@ func viewText(g *gocui.Gui) error {
 		}
 		v.Title = "Text"
 		renderTextView(g)
+	}
+	return nil
+}
+
+func viewStats(g *gocui.Gui) error {
+	maxX, _ := g.Size()
+	if v, err := g.SetView("stats", -1, -1, maxX, 3); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		v.Title = "Stats"
+		renderStats(g)
 	}
 	return nil
 }
@@ -197,8 +215,12 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 		if annotationId == AnnotationNotName {
 			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
 				name := &names.Data.Names[i]
+				annotationName, err := annotationOfName(name.Annotation)
+				if err != nil {
+					return nil
+				}
 				if names.currentName().Name == name.Name &&
-					(annotationOfName(name.Annotation) == AnnotationNotAssigned ||
+					(annotationName == AnnotationNotAssigned ||
 						i < lastReviewedNameIndex) {
 					name.Annotation = AnnotationNotName.name()
 				}
@@ -206,8 +228,10 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 		} else if annotationId != AnnotationNotAssigned {
 			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
 				name := &names.Data.Names[i]
+				annotationName, err := annotationOfName(name.Annotation)
+				if err != nil { return err }
 				if names.currentName().Name == name.Name &&
-					annotationOfName(name.Annotation) == AnnotationNotName {
+					annotationName == AnnotationNotName {
 					name.Annotation = AnnotationNotAssigned.name()
 				}
 			}
@@ -226,7 +250,11 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 func listForward(g *gocui.Gui, _ *gocui.View) error {
 	var err error
 	name := names.currentName()
-	if annotationOfName(name.Annotation) == AnnotationNotAssigned {
+	annotationName, err := annotationOfName(name.Annotation)
+	if err != nil {
+		return nil
+	}
+	if annotationName == AnnotationNotAssigned {
 		name.Annotation = AnnotationAccepted.name()
 	}
 	step := 1
@@ -292,10 +320,14 @@ func renderTextView(g *gocui.Gui) error {
 		}
 	}
 	color := AnnotationNotAssigned.color()
-	if annotationOfName(name.Annotation) == AnnotationNotName {
+	annotationName, err := annotationOfName(name.Annotation)
+	if err != nil {
+		return nil
+	}
+	if annotationName == AnnotationNotName {
 		color = AnnotationNotName.color()
 	}
-	for i := 0; i <= nameViewCenterOffset - newLinesBefore; i++ {
+	for i := 0; i <= nameViewCenterOffset-newLinesBefore; i++ {
 		fmt.Fprintln(viewText)
 	}
 	_, err = fmt.Fprintf(viewText, "%s\033[40;%d;1m%s\033[0m%s",
@@ -304,7 +336,7 @@ func renderTextView(g *gocui.Gui) error {
 		string(text.Original[name.OffsetStart:name.OffsetEnd]),
 		string(text.Original[name.OffsetEnd:cursorRight]),
 	)
-	for i := 0; i <= newLinesAfter - nameViewCenterOffset + 1; i++ {
+	for i := 0; i <= newLinesAfter-nameViewCenterOffset+1; i++ {
 		fmt.Fprintln(viewText)
 	}
 	return err
@@ -349,12 +381,64 @@ func renderNamesView(g *gocui.Gui) error {
 	for i := namesSliceLeft; i < namesSliceRight; i++ {
 		current := i == names.Data.Meta.CurrentName
 		nm := names.Data.Names[i]
-		fmt.Fprintln(viewNames, strings.Join(nameStrings(&nm, current, i, namesTotal), "\n"))
+		nameStrs, err := nameStrings(&nm, current, i, namesTotal)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(viewNames, strings.Join(nameStrs, "\n"))
 	}
 	if err = copyCurrentNameToClipboard(); err != nil {
 		return err
 	}
+	if err = renderStats(g); err != nil {
+		return err
+	}
 	return nil
+}
+
+func renderStats(g *gocui.Gui) error {
+	maxX, _ := g.Size()
+	var (
+		err       error
+		viewStats *gocui.View
+		stats     Stats
+	)
+	for _, view := range g.Views() {
+		if view.Name() == "stats" {
+			viewStats = view
+			break
+		}
+	}
+
+	for nameIdx := 0; nameIdx <= lastReviewedNameIndex; nameIdx++ {
+		name := names.Data.Names[nameIdx]
+		annotationName, err := annotationOfName(name.Annotation)
+		if err != nil {
+			return err
+		}
+		if annotationName != AnnotationNotAssigned {
+			stats.total++
+		}
+		switch annotationName {
+		case AnnotationNotName:
+			stats.rejectedCount++
+		case AnnotationAccepted:
+			stats.acceptedCount++
+		case AnnotationUninomial, AnnotationGenus, AnnotationSpecies:
+			stats.modifiedCount++
+		}
+	}
+
+	viewStats.Clear()
+	fmt.Fprintln(viewStats)
+	fmt.Fprintln(viewStats)
+	statsStrVisibleLen := 69 // The hack, since len(statsStr) >> len(statsStr_visibleChars)
+	for i := 0; i < maxX - statsStrVisibleLen; i++ {
+		fmt.Fprint(viewStats, " ")
+	}
+	fmt.Fprint(viewStats, stats.format())
+
+	return err
 }
 
 func copyCurrentNameToClipboard() error {
