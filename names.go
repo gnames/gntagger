@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"errors"
 
 	"github.com/gnames/gnfinder"
 )
@@ -42,7 +43,7 @@ func (n *Names) Save() error {
 	return ioutil.WriteFile(n.Path, json, 0644)
 }
 
-func nameStrings(n *gnfinder.NameJSON, current bool, i int, total int) []string {
+func nameStrings(n *gnfinder.NameJSON, current bool, i int, total int) ([]string, error) {
 	name := make([]string, 4)
 	nameString := n.Name
 	if current {
@@ -51,20 +52,24 @@ func nameStrings(n *gnfinder.NameJSON, current bool, i int, total int) []string 
 	name[0] = fmt.Sprintf("    %d/%d", i+1, total)
 	name[1] = fmt.Sprintf("Type: %s", n.Type)
 	name[2] = fmt.Sprintf("Name: %s", nameString)
-	name[3] = annotationOfName(n.Annotation).formatString()
-	return name
+	annotation, err := annotationOfName(n.Annotation)
+	if err != nil {
+		return nil, err
+	}
+	name[3] = annotation.formatString()
+	return name, nil
 }
 
-func annotationOfName(annotationName string) AnnotationId {
+func annotationOfName(annotationName string) (AnnotationId, error) {
 	if annotationName == "NotAssigned" {
-		return AnnotationNotAssigned
+		return AnnotationNotAssigned, nil
 	}
 	for idx, an := range annotationNames {
 		if an == annotationName {
-			return AnnotationId(idx)
+			return AnnotationId(idx), nil
 		}
 	}
-	return AnnotationNotAssigned
+	return -1, errors.New(fmt.Sprintf("annotation name %s isn't supported", annotationName))
 }
 
 func (annotation AnnotationId) color() int {
