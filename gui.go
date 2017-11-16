@@ -410,8 +410,9 @@ func renderStats(g *gocui.Gui) error {
 		}
 	}
 
-	for _, n := range names.Data.Names {
-		annotationName, err := annotationOfName(n.Annotation)
+	for nameIdx := 0; nameIdx <= lastReviewedNameIndex; nameIdx++ {
+		name := names.Data.Names[nameIdx]
+		annotationName, err := annotationOfName(name.Annotation)
 		if err != nil {
 			return err
 		}
