@@ -8,6 +8,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/jroimartin/gocui"
+	"os"
 )
 
 var (
@@ -18,9 +19,19 @@ var (
 	lastReviewedNameIndex = 0
 )
 
-func InitGUI(t *Text, n *Names) {
-	text = t
-	names = n
+func InitGUI(inputData []byte, inputDataPath string) {
+	var err error
+
+	text, names, err = prepareData(inputData, inputDataPath)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	if names.Data.Meta.TotalNames == 0 {
+		fmt.Printf("\nNo names had been found in the document\n\n")
+		os.Exit(0)
+	}
+
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)

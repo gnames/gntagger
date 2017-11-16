@@ -113,32 +113,6 @@ func NamesFromJSON(path string) *Names {
 	return &Names{path, o}
 }
 
-type Text struct {
-	// Path to the text file
-	Path string
-	// Content of the file converted to runes
-	Original []rune
-}
-
-func (t *Text) Markup(n *Names) string {
-	var markup []rune
-	name := n.Data.Names[n.Data.Meta.CurrentName]
-	markup = append(markup, t.Original[0:name.OffsetStart]...)
-	markup = append(markup, []rune("\033[40;33;1m")...)
-	markup = append(markup, t.Original[name.OffsetStart:name.OffsetEnd]...)
-	markup = append(markup, []rune("\033[0m")...)
-	markup = append(markup, t.Original[name.OffsetEnd:len(t.Original)]...)
-	return string(markup)
-}
-
-func PrepareText(path string) *Text {
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Panicln(err)
-	}
-	return &Text{path, []rune(string(b))}
-}
-
 func (names *Names) currentName() *gnfinder.NameJSON {
 	return &names.Data.Names[names.Data.Meta.CurrentName]
 }
