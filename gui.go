@@ -432,28 +432,11 @@ func renderStats(g *gocui.Gui) error {
 	viewStats.Clear()
 	fmt.Fprintln(viewStats)
 	fmt.Fprintln(viewStats)
-	statsStr := fmt.Sprintf(
-		"Precision: %.2f, Recall: %.2f | \033[%d;40;2mAcc. %d%% " +
-			"\033[%d;40;2mRej. %d%% " +
-				"\033[%d;40;2mMod. %d%% " +
-					"\033[%d;40;2mAdd. %d%% \033[0m",
-		stats.precision(),
-		stats.recall(),
-		AnnotationAccepted.color(),
-		stats.acceptedRate(),
-		AnnotationNotName.color(),
-		stats.rejectedRate(),
-		AnnotationSpecies.color(),
-		stats.modifiedRate(),
-		AnnotationNotAssigned.color(),
-		stats.addedRate(),
-	)
-
 	statsStrVisibleLen := 69 // The hack, since len(statsStr) >> len(statsStr_visibleChars)
 	for i := 0; i < maxX - statsStrVisibleLen; i++ {
 		fmt.Fprint(viewStats, " ")
 	}
-	fmt.Fprint(viewStats, statsStr)
+	fmt.Fprint(viewStats, stats.format())
 
 	return err
 }
