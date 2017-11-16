@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"os"
 	"fmt"
+	"github.com/mitchellh/go-wordwrap"
 )
 
 type Text struct {
@@ -15,6 +16,8 @@ type Text struct {
 	Path string
 	// Content of the file converted to runes
 	Original []rune
+
+	width    uint
 }
 
 func (t *Text) Markup(n *Names) string {
@@ -33,13 +36,14 @@ func PrepareText(path string) *Text {
 	if err != nil {
 		log.Panicln(err)
 	}
-	return &Text{path, []rune(string(b))}
+	return &Text{path, []rune(string(b)), 0}
 }
 
-func prepareData(text []byte, path string) (*Text, *Names, error) {
+func prepareData(text []byte, path string, width int) (*Text, *Names, error) {
 	dir, file := prepareFilepaths(path)
 	cleanData := sanitizeText(text)
-	textPath, jsonPath := createFilesGently(dir, file, cleanData)
+	alignedText := wordwrap.WrapString(string(cleanData), uint(width))
+	textPath, jsonPath := createFilesGently(dir, file, []byte(alignedText))
 	txt := PrepareText(textPath)
 	names := NamesFromJSON(jsonPath)
 	return txt, names, nil
