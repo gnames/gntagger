@@ -76,7 +76,7 @@ func InitGUI(inputData []byte, inputDataPath string) {
 	g.Cursor = true
 
 	initViewsMap(g)
-	text, names, err = prepareData(textData, textDataPath, views[ViewText].width())
+	text, names, err = prepareData(textData, textDataPath, views[ViewText].width() - 1)
 	if err != nil {
 		log.Panic(err)
 	}
