@@ -6,12 +6,13 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+
 	. "github.com/gnames/gntagger"
 )
 
 var (
-	githash = "n/a"
-	gittag = "n/a"
+	githash    = "n/a"
+	gittag     = "n/a"
 	buildstamp = "n/a"
 )
 
@@ -19,14 +20,14 @@ func main() {
 	flag.Usage = func() {
 		help :=
 			"Usage of %s:\n\n" +
-			"%s file_with_names\n\nor\n\n" +
-			"cat file | %s\n\n" +
-			"If the input is a file, the results will be placed " +
-			"next to the file under a directory with the name " +
-			"\"your_file_name_input\".\n" +
-			"If the input compes from a pipe the results will be located in " +
-			"a ./gntagger_input directory.\n\n" +
-			"Documentation: https://godoc.org/github.com/gnames/gntagger\n\n"
+				"%s file_with_names\n\nor\n\n" +
+				"cat file | %s\n\n" +
+				"If the input is a file, the results will be placed " +
+				"next to the file under a directory with the name " +
+				"\"your_file_name_input\".\n" +
+				"If the input compes from a pipe the results will be located in " +
+				"a ./gntagger_input directory.\n\n" +
+				"Documentation: https://godoc.org/github.com/gnames/gntagger\n\n"
 
 		fmt.Fprintf(os.Stderr, help, os.Args[0], os.Args[0], os.Args[0])
 		flag.PrintDefaults()
@@ -39,6 +40,7 @@ func main() {
 	)
 
 	versionFlag := flag.Bool("version", false, "Print version")
+	bayesFlag := flag.Bool("bayes", false, "Use bayes name-finding")
 	flag.Parse()
 
 	if *versionFlag {
@@ -69,7 +71,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	InitGUI(data, path)
+	InitGUI(data, path, bayesFlag)
 }
 
 func checkStdin() bool {
