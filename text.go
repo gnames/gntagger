@@ -1,13 +1,14 @@
 package gntagger
 
 import (
-	"path/filepath"
-	"github.com/gnames/gnfinder"
-	"log"
-	"io/ioutil"
-	"regexp"
-	"os"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"regexp"
+
+	"github.com/gnames/gnfinder"
 	"github.com/mitchellh/go-wordwrap"
 )
 
@@ -17,7 +18,7 @@ type Text struct {
 	// Content of the file converted to runes
 	Original []rune
 
-	width    uint
+	width uint
 }
 
 func (t *Text) Markup(n *Names) string {
@@ -39,11 +40,11 @@ func PrepareText(path string) *Text {
 	return &Text{path, []rune(string(b)), 0}
 }
 
-func prepareData(text []byte, path string, width int) (*Text, *Names, error) {
+func prepareData(text []byte, path string, width int, bayes *bool) (*Text, *Names, error) {
 	dir, file := prepareFilepaths(path)
 	cleanData := sanitizeText(text)
 	alignedText := wordwrap.WrapString(string(cleanData), uint(width))
-	textPath, jsonPath := createFilesGently(dir, file, []byte(alignedText))
+	textPath, jsonPath := createFilesGently(dir, file, []byte(alignedText), bayes)
 	txt := PrepareText(textPath)
 	names := NamesFromJSON(jsonPath)
 	return txt, names, nil
@@ -64,7 +65,8 @@ func prepareFilepaths(path string) (string, string) {
 	return dir, file
 }
 
-func createFilesGently(dir string, file string, text []byte) (string, string) {
+func createFilesGently(dir string, file string, text []byte,
+	bayes *bool) (string, string) {
 	dict := gnfinder.LoadDictionary()
 	textPath := filepath.Join(dir, file)
 	jsonPath := textPath + ".json"
@@ -82,7 +84,13 @@ func createFilesGently(dir string, file string, text []byte) (string, string) {
 		log.Panic(err)
 	}
 
-	json := gnfinder.FindNamesJSON(text, &dict)
+	var opts []gnfinder.Opt
+
+	if *bayes {
+		opts = []gnfinder.Opt{gnfinder.WithBayes}
+	}
+
+	json := gnfinder.FindNamesJSON(text, &dict, opts...)
 	err = ioutil.WriteFile(jsonPath, json, 0644)
 	if err != nil {
 		log.Panic(err)
