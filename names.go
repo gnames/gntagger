@@ -44,7 +44,7 @@ func (n *Names) Save() error {
 	return ioutil.WriteFile(n.Path, json, 0644)
 }
 
-func nameStrings(n *gnfinder.NameJSON, current bool, i int, total int) ([]string, error) {
+func nameStrings(n *gnfinder.Name, current bool, i int, total int) ([]string, error) {
 	name := make([]string, 4)
 	nameString := n.Name
 	if current {
@@ -118,6 +118,6 @@ func NamesFromJSON(path string) *Names {
 	return &Names{path, o}
 }
 
-func (names *Names) currentName() *gnfinder.NameJSON {
+func (names *Names) currentName() *gnfinder.Name {
 	return &names.Data.Names[names.Data.Meta.CurrentName]
 }
