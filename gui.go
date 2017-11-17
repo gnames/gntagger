@@ -6,9 +6,10 @@ import (
 
 	"strings"
 
+	"os"
+
 	"github.com/atotto/clipboard"
 	"github.com/jroimartin/gocui"
-	"os"
 )
 
 type Window struct {
@@ -26,7 +27,7 @@ func (w *Window) height() int {
 type ViewType int
 
 const (
-	ViewText  ViewType = iota
+	ViewText ViewType = iota
 	ViewNames
 	ViewHelp
 )
@@ -35,7 +36,7 @@ var (
 	textData     []byte
 	textDataPath string
 
-	views 				  = map[ViewType]*Window{}
+	views                 = map[ViewType]*Window{}
 	names                 = &Names{}
 	text                  = &Text{}
 	saveCount             = 0
@@ -50,7 +51,7 @@ func initViewsMap(g *gocui.Gui) {
 	views[ViewHelp] = &Window{-1, maxY - 2, maxX, maxY}
 }
 
-func InitGUI(inputData []byte, inputDataPath string) {
+func InitGUI(inputData []byte, inputDataPath string, bayes *bool) {
 	var err error
 
 	textData = inputData
@@ -76,7 +77,7 @@ func InitGUI(inputData []byte, inputDataPath string) {
 	g.Cursor = true
 
 	initViewsMap(g)
-	text, names, err = prepareData(textData, textDataPath, views[ViewText].width() - 1)
+	text, names, err = prepareData(textData, textDataPath, views[ViewText].width()-1, bayes)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -279,7 +280,9 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
 				name := &names.Data.Names[i]
 				annotationName, err := annotationOfName(name.Annotation)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 				if names.currentName().Name == name.Name &&
 					annotationName == AnnotationNotName {
 					name.Annotation = AnnotationNotAssigned.name()
@@ -483,7 +486,7 @@ func renderStats(g *gocui.Gui) error {
 	fmt.Fprintln(viewStats)
 	fmt.Fprintln(viewStats)
 	statsStrVisibleLen := 69 // The hack, since len(statsStr) >> len(statsStr_visibleChars)
-	for i := 0; i < maxX - statsStrVisibleLen; i++ {
+	for i := 0; i < maxX-statsStrVisibleLen; i++ {
 		fmt.Fprint(viewStats, " ")
 	}
 	fmt.Fprint(viewStats, stats.format())

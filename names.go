@@ -1,10 +1,11 @@
 package gntagger
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"errors"
+	"math"
 
 	"github.com/gnames/gnfinder"
 )
@@ -25,7 +26,7 @@ type Names struct {
 	// Path to json file with names
 	Path string
 	// Data is a gnfinder output
-	Data gnfinder.OutputJSON
+	Data gnfinder.Output
 }
 
 var annotationNames = []string{
@@ -43,14 +44,18 @@ func (n *Names) Save() error {
 	return ioutil.WriteFile(n.Path, json, 0644)
 }
 
-func nameStrings(n *gnfinder.NameJSON, current bool, i int, total int) ([]string, error) {
+func nameStrings(n *gnfinder.Name, current bool, i int, total int) ([]string, error) {
 	name := make([]string, 4)
 	nameString := n.Name
 	if current {
 		nameString = fmt.Sprintf("\033[43;30;1m%s\033[0m", nameString)
 	}
 	name[0] = fmt.Sprintf("    %d/%d", i+1, total)
-	name[1] = fmt.Sprintf("Type: %s", n.Type)
+	if n.Odds != 0.0 {
+		name[1] = fmt.Sprintf("Log Odds: %0.2f", math.Log10(n.Odds))
+	} else {
+		name[1] = fmt.Sprintf("Type: %s", n.Type)
+	}
 	name[2] = fmt.Sprintf("Name: %s", nameString)
 	annotation, err := annotationOfName(n.Annotation)
 	if err != nil {
@@ -104,7 +109,7 @@ func (annotation AnnotationId) formatString() string {
 }
 
 func NamesFromJSON(path string) *Names {
-	o := gnfinder.OutputJSON{}
+	o := gnfinder.Output{}
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Panicln(err)
@@ -113,6 +118,6 @@ func NamesFromJSON(path string) *Names {
 	return &Names{path, o}
 }
 
-func (names *Names) currentName() *gnfinder.NameJSON {
+func (names *Names) currentName() *gnfinder.Name {
 	return &names.Data.Names[names.Data.Meta.CurrentName]
 }
