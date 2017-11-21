@@ -1,15 +1,16 @@
 package gntagger
 
 import (
-	"path/filepath"
-	"github.com/gnames/gnfinder"
-	"log"
 	"io/ioutil"
-	"regexp"
+	"log"
 	"os"
-	"github.com/mitchellh/go-wordwrap"
+	"path/filepath"
+	"regexp"
 	"crypto/sha1"
 	"encoding/base64"
+
+	"github.com/gnames/gnfinder"
+	"github.com/mitchellh/go-wordwrap"
 )
 
 const shaFileName = "sha.txt"
@@ -62,10 +63,10 @@ func PrepareText(path string) *Text {
 	return &Text{path, []rune(string(b))}
 }
 
-func prepareData(text []byte, dir string, file string, width int) (*Text, *Names, error) {
+func prepareData(text []byte, dir string, file string, width int, bayes *bool) (*Text, *Names, error) {
 	cleanData := sanitizeText(text)
 	alignedText := wordwrap.WrapString(string(cleanData), uint(width))
-	textPath, jsonPath, err := createFilesGently(dir, file, []byte(alignedText))
+	textPath, jsonPath, err := createFilesGently(dir, file, []byte(alignedText), bayes)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -93,7 +94,8 @@ func jsonFileName(fileName string) string {
 	return fileName + ".json"
 }
 
-func createFilesGently(dir string, file string, text []byte) (string, string, error) {
+func createFilesGently(dir string, file string, text []byte,
+	bayes *bool) (string, string, error) {
 	dict := gnfinder.LoadDictionary()
 	textPath := filepath.Join(dir, file)
 	jsonPath := jsonFileName(textPath)
@@ -103,10 +105,16 @@ func createFilesGently(dir string, file string, text []byte) (string, string, er
 		log.Panic(err)
 	}
 
-	json := gnfinder.FindNamesJSON(text, &dict)
+	var opts []gnfinder.Opt
+	if *bayes {
+		opts = []gnfinder.Opt{gnfinder.WithBayes}
+	}
+
+	json := gnfinder.FindNamesJSON(text, &dict, opts...)
 	err = ioutil.WriteFile(jsonPath, json, 0644)
 	if err != nil {
 		log.Panic(err)
+		return "", "", err
 	}
 
 	sha, err := computeSha(textData)

@@ -3,13 +3,12 @@ package gntagger
 import (
 	"fmt"
 	"log"
-
+	"path/filepath"
 	"strings"
+	"os"
 
 	"github.com/atotto/clipboard"
 	"github.com/jroimartin/gocui"
-	"os"
-	"path/filepath"
 )
 
 type Window struct {
@@ -27,7 +26,7 @@ func (w *Window) height() int {
 type ViewType int
 
 const (
-	ViewText  ViewType = iota
+	ViewText ViewType = iota
 	ViewNames
 	ViewHelp
 	ViewStats
@@ -38,6 +37,7 @@ var (
 	textDataPath string
 	textDataDir  string
 	textDataFile string
+	bayesFlag *bool
 
 	confirmationViewName = "confirmation"
 
@@ -57,11 +57,12 @@ func initViewsMap(g *gocui.Gui) {
 	views[ViewStats] = &Window{-1, -1, maxX, 3}
 }
 
-func InitGUI(inputData []byte, inputDataPath string) {
+func InitGUI(inputData []byte, inputDataPath string, bayes *bool) {
 	var err error
 
 	textData = inputData
 	textDataPath = inputDataPath
+	bayesFlag = bayes
 
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
@@ -181,7 +182,8 @@ func composeMainView(g *gocui.Gui) {
 	g.DeleteKeybindings("")
 	g.SetManagerFunc(Layout)
 
-	text, names, err = prepareData(textData, textDataDir, textDataFile, views[ViewText].width()-1)
+	text, names, err =
+		prepareData(textData, textDataDir, textDataFile, views[ViewText].width()-1, bayesFlag)
 	if err != nil {
 		log.Panic(err)
 	}
