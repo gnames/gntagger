@@ -19,7 +19,6 @@ const (
 	AnnotationUninomial
 	AnnotationGenus
 	AnnotationSpecies
-	AnnotationDoubtful
 )
 
 type Names struct {
@@ -29,6 +28,18 @@ type Names struct {
 	Data gnfinder.Output
 }
 
+func NewNames(text *Text, bayes *bool) *Names {
+	var opts []gnfinder.Opt
+	dict := gnfinder.LoadDictionary()
+
+	if *bayes {
+		opts = []gnfinder.Opt{gnfinder.WithBayes}
+	}
+
+	data := gnfinder.FindNames(text.Processed, &dict, opts...)
+	return &Names{Data: data, Path: text.FilePath(NamesFile)}
+}
+
 var annotationNames = []string{
 	"",
 	"NotName",
@@ -36,7 +47,6 @@ var annotationNames = []string{
 	"Uninomial",
 	"Genus",
 	"Species",
-	"Doubtful",
 }
 
 func (n *Names) Save() error {
@@ -83,8 +93,6 @@ func (annotation AnnotationId) color() int {
 		return 32 //green
 	case AnnotationNotName:
 		return 31 //red
-	case AnnotationDoubtful:
-		return 37 //light grey
 	case AnnotationSpecies:
 		return 35 //magenta
 	case AnnotationGenus:
@@ -118,6 +126,6 @@ func NamesFromJSON(path string) *Names {
 	return &Names{path, o}
 }
 
-func (names *Names) currentName() *gnfinder.Name {
+func (names *Names) GetCurrentName() *gnfinder.Name {
 	return &names.Data.Names[names.Data.Meta.CurrentName]
 }

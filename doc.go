@@ -28,8 +28,6 @@ allow to annotate the "current name" differently:
 
 * 's':  marks a name as "Species"
 
-* 'd':  marks a name as "Doubtful"
-
 * Ctrl-C: saves curation and exits application
 
 * Ctrl-S: saves curations made so far

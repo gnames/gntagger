@@ -1,122 +1,100 @@
 package gntagger
 
 import (
+	"crypto/sha1"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 	"regexp"
 
-	"github.com/gnames/gnfinder"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/mitchellh/go-wordwrap"
 )
 
+type FileType int
+
+const (
+	InputFile FileType = iota
+	NamesFile
+	MetaFile
+)
+
+type TextMeta struct {
+	// Checksum is a hash calculated from the content
+	Checksum string `json:"text_checksum"`
+	// Githash is a hash of a git commit. It would be 'n/a' if not given
+	Githash string `json:"app_git_commit"`
+	// Timestamp of the last save
+	Timestamp string `json:"save_timestamp"`
+}
+
+func (t *TextMeta) ToJSON() []byte {
+	json, err := jsoniter.Marshal(t)
+	if err != nil {
+		log.Panic(err)
+	}
+	return json
+}
+
 type Text struct {
+	// Raw text, as it was given by a user
+	Raw []byte
+	// Cleaned text after removing non-printable characters and wrapping
+	// according to the width of a user's terminal
+	Processed []rune
 	// Path to the text file
 	Path string
-	// Content of the file converted to runes
-	Original []rune
-
+	// Files is a map that contains names of the files created by gntagger
+	Files map[FileType]string
+	// TextMeta describes provides metainformation about text:
+	// Checksum, Githash, Timestamp
+	TextMeta
+	// width of the user's terminal window
 	width uint
 }
 
-func (t *Text) Markup(n *Names) string {
-	var markup []rune
-	name := n.Data.Names[n.Data.Meta.CurrentName]
-	markup = append(markup, t.Original[0:name.OffsetStart]...)
-	markup = append(markup, []rune("\033[40;33;1m")...)
-	markup = append(markup, t.Original[name.OffsetStart:name.OffsetEnd]...)
-	markup = append(markup, []rune("\033[0m")...)
-	markup = append(markup, t.Original[name.OffsetEnd:len(t.Original)]...)
-	return string(markup)
-}
-
-func PrepareText(path string) *Text {
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Panicln(err)
+func NewText(data []byte, path string, githash string) *Text {
+	path = preparePath(path)
+	checksum := fmt.Sprintf("%x", sha1.Sum(data))
+	meta := TextMeta{
+		Checksum:  checksum,
+		Githash:   githash,
+		Timestamp: timestamp(),
 	}
-	return &Text{path, []rune(string(b)), 0}
+
+	text := &Text{
+		Raw:      data,
+		Path:     path,
+		TextMeta: meta,
+		Files: map[FileType]string{
+			InputFile: "input.txt",
+			NamesFile: "names.json",
+			MetaFile:  "meta.json",
+		},
+	}
+	return text
 }
 
-func prepareData(text []byte, path string, width int, bayes *bool) (*Text, *Names, error) {
-	dir, file := prepareFilepaths(path)
-	cleanData := sanitizeText(text)
-	alignedText := wordwrap.WrapString(string(cleanData), uint(width))
-	textPath, jsonPath := createFilesGently(dir, file, []byte(alignedText), bayes)
-	txt := PrepareText(textPath)
-	names := NamesFromJSON(jsonPath)
-	return txt, names, nil
+func (t *Text) Process(width int) {
+	cleanData := sanitizeText(t.Raw)
+	alignedText := wordwrap.WrapString(cleanData, uint(width))
+	t.Processed = []rune(alignedText)
 }
 
-func sanitizeText(b []byte) []byte {
+func (t *Text) FilePath(f FileType) string {
+	return filepath.Join(t.Path, t.Files[f])
+}
+
+func sanitizeText(b []byte) string {
 	re := regexp.MustCompile("[^[:print:]\n]")
-	return []byte(re.ReplaceAllString(string(b), ""))
+	return re.ReplaceAllString(string(b), "")
 }
 
-func prepareFilepaths(path string) (string, string) {
-	file := "input.txt"
+func preparePath(path string) string {
 	if path == "" {
-		return "./gntagger_input", file
+		return "./gntagger_input"
 	}
 	d, f := filepath.Split(path)
-	dir := filepath.Join(d, f+"_input")
-	return dir, file
-}
-
-func createFilesGently(dir string, file string, text []byte,
-	bayes *bool) (string, string) {
-	dict := gnfinder.LoadDictionary()
-	textPath := filepath.Join(dir, file)
-	jsonPath := textPath + ".json"
-
-	ok, err := fileExistsAlready(dir, file)
-	if err != nil {
-		log.Panic(err)
-	}
-	if ok {
-		return textPath, jsonPath
-	}
-
-	err = ioutil.WriteFile(textPath, text, 0644)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	var opts []gnfinder.Opt
-
-	if *bayes {
-		opts = []gnfinder.Opt{gnfinder.WithBayes}
-	}
-
-	json := gnfinder.FindNamesJSON(text, &dict, opts...)
-	err = ioutil.WriteFile(jsonPath, json, 0644)
-	if err != nil {
-		log.Panic(err)
-	}
-	return textPath, jsonPath
-}
-
-func fileExistsAlready(dir string, file string) (bool, error) {
-	path := filepath.Join(dir, file)
-	if stat, err := os.Stat(dir); err == nil && stat.IsDir() {
-		if stat, err := os.Stat(path); err == nil && !stat.IsDir() {
-			return true, nil
-		} else if err != nil {
-			return false, err
-		} else {
-			return false, fmt.Errorf("path %s exists but it is a dir", path)
-		}
-	} else if err != nil {
-		err := os.Mkdir(dir, 0755)
-		if err != nil {
-			return false, err
-		}
-		return false, nil
-	} else if !stat.IsDir() {
-		return false, fmt.Errorf("path %s exists but it is not a dir", dir)
-	} else {
-		return false, nil
-	}
+	dir := filepath.Join(d, f+"_gntagger")
+	return dir
 }

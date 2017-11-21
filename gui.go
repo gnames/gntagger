@@ -3,10 +3,8 @@ package gntagger
 import (
 	"fmt"
 	"log"
-
-	"strings"
-
 	"os"
+	"strings"
 
 	"github.com/atotto/clipboard"
 	"github.com/jroimartin/gocui"
@@ -33,9 +31,6 @@ const (
 )
 
 var (
-	textData     []byte
-	textDataPath string
-
 	views                 = map[ViewType]*Window{}
 	names                 = &Names{}
 	text                  = &Text{}
@@ -51,40 +46,27 @@ func initViewsMap(g *gocui.Gui) {
 	views[ViewHelp] = &Window{-1, maxY - 2, maxX, maxY}
 }
 
-func InitGUI(inputData []byte, inputDataPath string, bayes *bool) {
-	var err error
-
-	textData = inputData
-	textDataPath = inputDataPath
-
+func InitGUI(t *Text, bayes *bool) {
+	text = t
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
 	defer g.Close()
 
-	for i, n := range names.Data.Names {
-		lastReviewedNameIndex = i
-		annotationName, err := annotationOfName(n.Annotation)
-		if err != nil {
-			log.Panicln(err)
-		}
-		if annotationName == AnnotationNotAssigned {
-			break
-		}
-	}
-
 	g.Cursor = true
 
 	initViewsMap(g)
-	text, names, err = prepareData(textData, textDataPath, views[ViewText].width()-1, bayes)
-	if err != nil {
-		log.Panic(err)
-	}
+
+	text.Process(views[ViewText].width() - 1)
+	names = NewNames(text, bayes)
 	if names.Data.Meta.TotalNames == 0 {
+		g.Close()
 		fmt.Printf("\nNo names had been found in the document\n\n")
 		os.Exit(0)
 	}
+
+	names = createFilesGently(text, names)
 
 	g.SetManagerFunc(Layout)
 
@@ -134,10 +116,6 @@ func Keybindings(g *gocui.Gui) error {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'd', gocui.ModNone, doubtfulName); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -146,10 +124,6 @@ func Layout(g *gocui.Gui) error {
 	initViewsMap(g)
 
 	if err = viewStats(g); err != nil {
-		return err
-	}
-
-	if err = viewNames(g); err != nil {
 		return err
 	}
 
@@ -174,7 +148,10 @@ func viewNames(g *gocui.Gui) error {
 			return err
 		}
 		v.Title = "Names"
-		renderNamesView(g)
+		err := renderNamesView(g)
+		if err != nil {
+			log.Panic(err)
+		}
 	}
 	return nil
 }
@@ -186,7 +163,9 @@ func viewText(g *gocui.Gui) error {
 			return err
 		}
 		v.Title = "Text"
-		renderTextView(g)
+		if err := renderTextView(g); err != nil {
+			log.Panic(err)
+		}
 	}
 	return nil
 }
@@ -198,7 +177,9 @@ func viewStats(g *gocui.Gui) error {
 			return err
 		}
 		v.Title = "Stats"
-		renderStats(g)
+		if err := renderStats(g); err != nil {
+			log.Panic(err)
+		}
 	}
 	return nil
 }
@@ -214,13 +195,15 @@ func viewHelp(g *gocui.Gui) error {
 		v.FgColor = gocui.ColorBlack
 		fmt.Fprintln(v,
 			"→ (yes*) next, ← back, Space no, y yes, s species, "+
-				"g genus, u uninomial, d doubt, ^S save, ^C exit")
+				"g genus, u uninomial, ^S save, ^C exit")
 	}
 	return nil
 }
 
 func quit(g *gocui.Gui, v *gocui.View) error {
-	save(g, v)
+	if err := save(g, v); err != nil {
+		log.Panic(err)
+	}
 	return gocui.ErrQuit
 }
 
@@ -244,11 +227,6 @@ func uninomialName(g *gocui.Gui, _ *gocui.View) error {
 	return err
 }
 
-func doubtfulName(g *gocui.Gui, _ *gocui.View) error {
-	err := setKey(g, AnnotationDoubtful)
-	return err
-}
-
 func yesName(g *gocui.Gui, _ *gocui.View) error {
 	err := setKey(g, AnnotationAccepted)
 	return err
@@ -261,7 +239,7 @@ func noName(g *gocui.Gui, _ *gocui.View) error {
 
 func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 	var err error
-	names.currentName().Annotation = annotationId.name()
+	names.GetCurrentName().Annotation = annotationId.name()
 	if names.Data.Meta.CurrentName >= lastReviewedNameIndex-3 {
 		if annotationId == AnnotationNotName {
 			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
@@ -270,7 +248,7 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 				if err != nil {
 					return nil
 				}
-				if names.currentName().Name == name.Name &&
+				if names.GetCurrentName().Name == name.Name &&
 					(annotationName == AnnotationNotAssigned ||
 						i < lastReviewedNameIndex) {
 					name.Annotation = AnnotationNotName.name()
@@ -283,7 +261,7 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 				if err != nil {
 					return err
 				}
-				if names.currentName().Name == name.Name &&
+				if names.GetCurrentName().Name == name.Name &&
 					annotationName == AnnotationNotName {
 					name.Annotation = AnnotationNotAssigned.name()
 				}
@@ -302,7 +280,7 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 
 func listForward(g *gocui.Gui, _ *gocui.View) error {
 	var err error
-	name := names.currentName()
+	name := names.GetCurrentName()
 	annotationName, err := annotationOfName(name.Annotation)
 	if err != nil {
 		return nil
@@ -344,7 +322,6 @@ func listBack(g *gocui.Gui, _ *gocui.View) error {
 
 func renderTextView(g *gocui.Gui) error {
 	var (
-		err      error
 		viewText *gocui.View
 	)
 	for _, view := range g.Views() {
@@ -357,18 +334,18 @@ func renderTextView(g *gocui.Gui) error {
 	_, maxY := g.Size()
 	viewText.Clear()
 
-	name := names.currentName()
+	name := names.GetCurrentName()
 	cursorLeft := name.OffsetStart - 1
 	newLinesBefore := 0
 	for ; cursorLeft >= 0 && newLinesBefore <= nameViewCenterOffset; cursorLeft-- {
-		if text.Original[cursorLeft] == '\n' {
+		if text.Processed[cursorLeft] == '\n' {
 			newLinesBefore++
 		}
 	}
 	newLinesAfter := 0
 	cursorRight := name.OffsetEnd + 1
-	for ; cursorRight < len(text.Original)-1 && newLinesAfter < maxY/2-1; cursorRight++ {
-		if text.Original[cursorRight] == '\n' {
+	for ; cursorRight < len(text.Processed)-1 && newLinesAfter < maxY/2-1; cursorRight++ {
+		if text.Processed[cursorRight] == '\n' {
 			newLinesAfter++
 		}
 	}
@@ -384,10 +361,10 @@ func renderTextView(g *gocui.Gui) error {
 		fmt.Fprintln(viewText)
 	}
 	_, err = fmt.Fprintf(viewText, "%s\033[40;%d;1m%s\033[0m%s",
-		string(text.Original[cursorLeft+1:name.OffsetStart]),
+		string(text.Processed[cursorLeft+1:name.OffsetStart]),
 		color,
-		string(text.Original[name.OffsetStart:name.OffsetEnd]),
-		string(text.Original[name.OffsetEnd:cursorRight]),
+		string(text.Processed[name.OffsetStart:name.OffsetEnd]),
+		string(text.Processed[name.OffsetEnd:cursorRight]),
 	)
 	for i := 0; i <= newLinesAfter-nameViewCenterOffset+1; i++ {
 		fmt.Fprintln(viewText)
@@ -408,7 +385,9 @@ func renderNamesView(g *gocui.Gui) error {
 	}
 	saveCount++
 	if saveCount >= 30 {
-		save(g, viewNames)
+		if err := save(g, viewNames); err != nil {
+			log.Panic(err)
+		}
 		saveCount = 0
 	}
 	_, maxY := g.Size()
@@ -517,5 +496,5 @@ func renderStats(g *gocui.Gui) error {
 }
 
 func copyCurrentNameToClipboard() error {
-	return clipboard.WriteAll(names.currentName().Name)
+	return clipboard.WriteAll(names.GetCurrentName().Name)
 }

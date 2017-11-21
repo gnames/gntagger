@@ -24,7 +24,7 @@ func main() {
 				"cat file | %s\n\n" +
 				"If the input is a file, the results will be placed " +
 				"next to the file under a directory with the name " +
-				"\"your_file_name_input\".\n" +
+				"\"your_file_name_gntagger\".\n" +
 				"If the input compes from a pipe the results will be located in " +
 				"a ./gntagger_input directory.\n\n" +
 				"Documentation: https://godoc.org/github.com/gnames/gntagger\n\n"
@@ -71,7 +71,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	InitGUI(data, path, bayesFlag)
+	text := NewText(data, path, githash)
+	WarningIfPreviousData(text)
+	InitGUI(text, bayesFlag)
 }
 
 func checkStdin() bool {

@@ -8,5 +8,47 @@ import (
 )
 
 var _ = Describe("Gntagger", func() {
+	Describe("Text", func() {
+		Describe("NewText", func() {
+			It("creates new Text object", func() {
+				t := NewText(dataLong, pathLong, "abcd")
+				Expect(t.Path).To(Equal("testdata/seashells_book.txt_gntagger"))
+			})
+		})
 
+		Describe("Process", func() {
+			It("cleans, wraps a text, and adds it to Processed field", func() {
+				t := NewText(dataLong, pathLong, "abcd")
+				t.Process(40)
+				Expect(len(t.Processed)).To(Equal(1095682))
+			})
+		})
+
+		Describe("NewNames", func() {
+			It("creates new Names object", func() {
+				var bayes bool
+				t := NewText(dataLong, pathLong, "abcd")
+				t.Process(80)
+				n := NewNames(t, &bayes)
+				Expect(n.Path).To(Equal("testdata/seashells_book.txt_gntagger/names.json"))
+				Expect(n.Data.Meta.TotalNames).To(BeNumerically(">", 4000))
+			})
+		})
+
+		Describe("Names", func() {
+			It("Returns current name", func() {
+				n := makeNames()
+				cn := n.GetCurrentName()
+				Expect(cn.Name).To(Equal("Phaeophleophleospora epicoccoides"))
+			})
+		})
+	})
 })
+
+func makeNames() *Names {
+	var bayes bool
+	t := NewText(dataShort, pathShort, "abcd")
+	t.Process(80)
+	n := NewNames(t, &bayes)
+	return n
+}
