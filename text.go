@@ -7,17 +7,18 @@ import (
 	"io/ioutil"
 	"regexp"
 	"os"
-	"fmt"
 	"github.com/mitchellh/go-wordwrap"
+	"crypto/sha1"
+	"encoding/base64"
 )
+
+const shaFileName = "sha.txt"
 
 type Text struct {
 	// Path to the text file
 	Path string
 	// Content of the file converted to runes
 	Original []rune
-
-	width    uint
 }
 
 func (t *Text) Markup(n *Names) string {
@@ -31,19 +32,43 @@ func (t *Text) Markup(n *Names) string {
 	return string(markup)
 }
 
+func computeSha(input []byte) (string, error) {
+	hasher := sha1.New()
+	if _, err := hasher.Write(input); err != nil {
+		return "", err
+	}
+	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+	return sha, nil
+}
+
+func checkIfShaEquals(dir string) (bool, error) {
+	hasher := sha1.New()
+	hasher.Write(textData)
+	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
+
+	shaExisting, err := ioutil.ReadFile(filepath.Join(dir, shaFileName))
+	if err != nil {
+		return false, err
+	}
+
+	return string(shaExisting) == sha, nil
+}
+
 func PrepareText(path string) *Text {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Panicln(err)
 	}
-	return &Text{path, []rune(string(b)), 0}
+	return &Text{path, []rune(string(b))}
 }
 
-func prepareData(text []byte, path string, width int) (*Text, *Names, error) {
-	dir, file := prepareFilepaths(path)
+func prepareData(text []byte, dir string, file string, width int) (*Text, *Names, error) {
 	cleanData := sanitizeText(text)
 	alignedText := wordwrap.WrapString(string(cleanData), uint(width))
-	textPath, jsonPath := createFilesGently(dir, file, []byte(alignedText))
+	textPath, jsonPath, err := createFilesGently(dir, file, []byte(alignedText))
+	if err != nil {
+		return nil, nil, err
+	}
 	txt := PrepareText(textPath)
 	names := NamesFromJSON(jsonPath)
 	return txt, names, nil
@@ -64,20 +89,16 @@ func prepareFilepaths(path string) (string, string) {
 	return dir, file
 }
 
-func createFilesGently(dir string, file string, text []byte) (string, string) {
+func jsonFileName(fileName string) string {
+	return fileName + ".json"
+}
+
+func createFilesGently(dir string, file string, text []byte) (string, string, error) {
 	dict := gnfinder.LoadDictionary()
 	textPath := filepath.Join(dir, file)
-	jsonPath := textPath + ".json"
+	jsonPath := jsonFileName(textPath)
 
-	ok, err := fileExistsAlready(dir, file)
-	if err != nil {
-		log.Panic(err)
-	}
-	if ok {
-		return textPath, jsonPath
-	}
-
-	err = ioutil.WriteFile(textPath, text, 0644)
+	err := ioutil.WriteFile(textPath, text, 0644)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -87,28 +108,49 @@ func createFilesGently(dir string, file string, text []byte) (string, string) {
 	if err != nil {
 		log.Panic(err)
 	}
-	return textPath, jsonPath
+
+	sha, err := computeSha(textData)
+	if err != nil {
+		log.Panic(err)
+		return "", "", err
+	}
+	err = ioutil.WriteFile(filepath.Join(dir, shaFileName), []byte(sha), 0644)
+	if err != nil {
+		log.Panic(err)
+		return "", "", err
+	}
+
+	return textPath, jsonPath, nil
 }
 
-func fileExistsAlready(dir string, file string) (bool, error) {
-	path := filepath.Join(dir, file)
-	if stat, err := os.Stat(dir); err == nil && stat.IsDir() {
-		if stat, err := os.Stat(path); err == nil && !stat.IsDir() {
-			return true, nil
-		} else if err != nil {
-			return false, err
-		} else {
-			return false, fmt.Errorf("path %s exists but it is a dir", path)
-		}
+func checkIfPathExists(dir string, file string) bool {
+	var (
+		err    error
+		exists bool
+	)
+	stat, err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		os.Mkdir(dir, 0755)
 	} else if err != nil {
-		err := os.Mkdir(dir, 0755)
-		if err != nil {
-			return false, err
-		}
-		return false, nil
+		log.Panic(err)
+		os.Exit(2)
 	} else if !stat.IsDir() {
-		return false, fmt.Errorf("path %s exists but it is not a dir", dir)
-	} else {
-		return false, nil
+		log.Panicf("Path %s exists. It should be a dir", dir)
+		os.Exit(2)
 	}
+
+	dataFilePath := filepath.Join(dir, file)
+	stat, err = os.Stat(dataFilePath)
+	if os.IsNotExist(err) {
+		exists = false
+	} else if err != nil {
+		log.Panic(err)
+		os.Exit(2)
+	} else if stat.IsDir() {
+		log.Panicf("Path %s exists. It should not be a dir", dir)
+		os.Exit(2)
+	} else {
+		exists = true
+	}
+	return exists
 }

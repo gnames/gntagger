@@ -9,6 +9,7 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/jroimartin/gocui"
 	"os"
+	"path/filepath"
 )
 
 type Window struct {
@@ -29,13 +30,18 @@ const (
 	ViewText  ViewType = iota
 	ViewNames
 	ViewHelp
+	ViewStats
 )
 
 var (
 	textData     []byte
 	textDataPath string
+	textDataDir  string
+	textDataFile string
 
-	views 				  = map[ViewType]*Window{}
+	confirmationViewName = "confirmation"
+
+	views                 = map[ViewType]*Window{}
 	names                 = &Names{}
 	text                  = &Text{}
 	saveCount             = 0
@@ -48,6 +54,7 @@ func initViewsMap(g *gocui.Gui) {
 	views[ViewNames] = &Window{-1, 3, 35, maxY - 1}
 	views[ViewText] = &Window{35, 3, maxX, maxY - 1}
 	views[ViewHelp] = &Window{-1, maxY - 2, maxX, maxY}
+	views[ViewStats] = &Window{-1, -1, maxX, 3}
 }
 
 func InitGUI(inputData []byte, inputDataPath string) {
@@ -76,7 +83,105 @@ func InitGUI(inputData []byte, inputDataPath string) {
 	g.Cursor = true
 
 	initViewsMap(g)
-	text, names, err = prepareData(textData, textDataPath, views[ViewText].width() - 1)
+
+	textDataDir, textDataFile = prepareFilepaths(textDataPath)
+	exists := checkIfPathExists(textDataDir, textDataFile)
+	if exists {
+		shaEquals, err := checkIfShaEquals(textDataDir)
+		if err != nil {
+			log.Panic(err)
+			os.Exit(2)
+		}
+		if shaEquals {
+			composeMainView(g)
+		} else {
+			g.SetManagerFunc(confirmationLayout)
+		}
+	} else {
+		composeMainView(g)
+	}
+
+	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+		log.Panicln(err)
+	}
+}
+
+func handleConfirmation(g *gocui.Gui, shouldDelete bool) {
+	if shouldDelete {
+		os.RemoveAll(textDataDir)
+		err := os.Mkdir(textDataDir, 0755)
+		if err != nil {
+			log.Panic(err)
+			os.Exit(2)
+		}
+	} else {
+		dataFilePath := filepath.Join(textDataDir, textDataFile)
+		jsonFilePath := jsonFileName(dataFilePath)
+		info, err := os.Stat(jsonFilePath)
+		if err != nil {
+			log.Panic(err)
+			os.Exit(2)
+		}
+
+		err = os.Remove(filepath.Join(textDataDir, shaFileName))
+		if err != nil {
+			log.Panic(err)
+			os.Exit(2)
+		}
+
+		fileSuffix := info.ModTime().Format("20060102150405")
+		err = os.Rename(jsonFilePath, jsonFilePath+"_"+fileSuffix)
+		if err != nil {
+			log.Panic(err)
+			os.Exit(2)
+		}
+		err = os.Rename(dataFilePath, dataFilePath+"_"+fileSuffix)
+		if err != nil {
+			log.Panic(err)
+			os.Exit(2)
+		}
+	}
+
+	composeMainView(g)
+}
+
+func confirmationLayout(g *gocui.Gui) error {
+	maxX, maxY := g.Size()
+	if v, err := g.SetView(confirmationViewName, 0, 0, maxX-1, maxY-1); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
+			func(g *gocui.Gui, v *gocui.View) error { return gocui.ErrQuit }); err != nil {
+			return err
+		}
+		if err := g.SetKeybinding("", 'y', gocui.ModNone,
+			func(g *gocui.Gui, v *gocui.View) error {
+				handleConfirmation(g, true)
+				return nil
+			}); err != nil {
+			return err
+		}
+		if err := g.SetKeybinding("", 'n', gocui.ModNone,
+			func(g *gocui.Gui, v *gocui.View) error {
+				handleConfirmation(g, false)
+				return nil
+			}); err != nil {
+			return err
+		}
+		fmt.Fprint(v, "Previous work is found. Delete it and start new? [y/n]")
+	}
+	return nil
+}
+
+func composeMainView(g *gocui.Gui) {
+	var err error
+
+	g.DeleteView(confirmationViewName)
+	g.DeleteKeybindings("")
+	g.SetManagerFunc(Layout)
+
+	text, names, err = prepareData(textData, textDataDir, textDataFile, views[ViewText].width()-1)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -85,13 +190,7 @@ func InitGUI(inputData []byte, inputDataPath string) {
 		os.Exit(0)
 	}
 
-	g.SetManagerFunc(Layout)
-
 	if err := Keybindings(g); err != nil {
-		log.Panicln(err)
-	}
-
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}
 }
@@ -152,10 +251,6 @@ func Layout(g *gocui.Gui) error {
 		return err
 	}
 
-	if err = viewNames(g); err != nil {
-		return err
-	}
-
 	if err = viewText(g); err != nil {
 		return err
 	}
@@ -191,8 +286,8 @@ func viewText(g *gocui.Gui) error {
 }
 
 func viewStats(g *gocui.Gui) error {
-	maxX, _ := g.Size()
-	if v, err := g.SetView("stats", -1, -1, maxX, 3); err != nil {
+	vs := views[ViewStats]
+	if v, err := g.SetView("stats", vs.x0, vs.y0, vs.x1, vs.y1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -279,7 +374,9 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
 				name := &names.Data.Names[i]
 				annotationName, err := annotationOfName(name.Annotation)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 				if names.currentName().Name == name.Name &&
 					annotationName == AnnotationNotName {
 					name.Annotation = AnnotationNotAssigned.name()
@@ -483,7 +580,7 @@ func renderStats(g *gocui.Gui) error {
 	fmt.Fprintln(viewStats)
 	fmt.Fprintln(viewStats)
 	statsStrVisibleLen := 69 // The hack, since len(statsStr) >> len(statsStr_visibleChars)
-	for i := 0; i < maxX - statsStrVisibleLen; i++ {
+	for i := 0; i < maxX-statsStrVisibleLen; i++ {
 		fmt.Fprint(viewStats, " ")
 	}
 	fmt.Fprint(viewStats, stats.format())
