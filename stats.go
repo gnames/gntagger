@@ -43,11 +43,13 @@ func (s *Stats) adjustPercentsTo100() {
 	s.modifiedPercent = percent(modifiedRate)
 	s.addedPercent = percent(addedRate)
 
-	percents := []*int{&s.acceptedPercent, &s.rejectedPercent, &s.modifiedPercent, &s.addedPercent}
+	percents := []*int{&s.acceptedPercent, &s.rejectedPercent,
+		&s.modifiedPercent, &s.addedPercent}
 	rates := []float32{acceptedRate, rejectedRate, modifiedRate, addedRate}
 
 	totalPercent := func() int {
-		return s.acceptedPercent + s.rejectedPercent + s.modifiedPercent + s.addedPercent
+		return s.acceptedPercent + s.rejectedPercent +
+			s.modifiedPercent + s.addedPercent
 	}
 
 	for ; totalPercent() < 100; {
@@ -62,7 +64,8 @@ func (s *Stats) adjustPercentsTo100() {
 			}
 			rateIf64 := float64(rates[i])
 			rateMaxf64 := float64(rates[maxId])
-			if (rateIf64 - math.Floor(rateIf64)) > (rateMaxf64 - math.Floor(rateMaxf64)) {
+			if (rateIf64 - math.Floor(rateIf64)) >
+				(rateMaxf64 - math.Floor(rateMaxf64)) {
 				maxId = i
 			}
 		}
@@ -72,9 +75,12 @@ func (s *Stats) adjustPercentsTo100() {
 
 func (stats *Stats) format() string {
 	var (
-		precisionStr, acceptedPercentStr, rejectedPercentStr, modifiedPercentStr string
-		recallStr                                                                = "n/a"
-		addedRateStr                                                             = "n/a"
+		precisionStr,
+		acceptedPercentStr,
+		rejectedPercentStr,
+		modifiedPercentStr string
+		recallStr    = "n/a"
+		addedRateStr = "n/a"
 	)
 
 	if stats.total == 0 {

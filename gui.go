@@ -26,7 +26,7 @@ func (w *Window) height() int {
 type ViewType int
 
 const (
-	ViewText ViewType = iota
+	ViewText  ViewType = iota
 	ViewNames
 	ViewHelp
 	ViewStats
@@ -37,7 +37,7 @@ var (
 	textDataPath string
 	textDataDir  string
 	textDataFile string
-	bayesFlag *bool
+	bayesFlag    *bool
 
 	confirmationViewName = "confirmation"
 
@@ -148,12 +148,14 @@ func handleConfirmation(g *gocui.Gui, shouldDelete bool) {
 
 func confirmationLayout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
-	if v, err := g.SetView(confirmationViewName, 0, 0, maxX-1, maxY-1); err != nil {
+	if v, err := g.SetView(confirmationViewName, 0, 0, maxX-1, maxY-1);
+		err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 		if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
-			func(g *gocui.Gui, v *gocui.View) error { return gocui.ErrQuit }); err != nil {
+			func(g *gocui.Gui, v *gocui.View) error { return gocui.ErrQuit });
+			err != nil {
 			return err
 		}
 		if err := g.SetKeybinding("", 'y', gocui.ModNone,
@@ -170,7 +172,8 @@ func confirmationLayout(g *gocui.Gui) error {
 			}); err != nil {
 			return err
 		}
-		fmt.Fprint(v, "Previous work is found. Delete it and start new? [y/n]")
+		fmt.Fprint(v,
+			"Previous work is found. Delete it and start new? [y/n]")
 	}
 	return nil
 }
@@ -182,8 +185,8 @@ func composeMainView(g *gocui.Gui) {
 	g.DeleteKeybindings("")
 	g.SetManagerFunc(Layout)
 
-	text, names, err =
-		prepareData(textData, textDataDir, textDataFile, views[ViewText].width()-1, bayesFlag)
+	text, names, err = prepareData(textData, textDataDir, textDataFile,
+		views[ViewText].width()-1, bayesFlag)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -198,43 +201,53 @@ func composeMainView(g *gocui.Gui) {
 }
 
 func Keybindings(g *gocui.Gui) error {
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
+		quit); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone, save); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone,
+		save); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone, listBack); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone,
+		listBack); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone, listForward); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone,
+		listForward); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeySpace, gocui.ModNone, noName); err != nil {
+	if err := g.SetKeybinding("", gocui.KeySpace, gocui.ModNone,
+		noName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'y', gocui.ModNone, yesName); err != nil {
+	if err := g.SetKeybinding("", 'y', gocui.ModNone,
+		yesName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 's', gocui.ModNone, speciesName); err != nil {
+	if err := g.SetKeybinding("", 's', gocui.ModNone,
+		speciesName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'g', gocui.ModNone, genusName); err != nil {
+	if err := g.SetKeybinding("", 'g', gocui.ModNone,
+		genusName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'u', gocui.ModNone, uninomialName); err != nil {
+	if err := g.SetKeybinding("", 'u', gocui.ModNone,
+		uninomialName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'd', gocui.ModNone, doubtfulName); err != nil {
+	if err := g.SetKeybinding("", 'd', gocui.ModNone,
+		doubtfulName); err != nil {
 		return err
 	}
 
@@ -265,7 +278,8 @@ func Layout(g *gocui.Gui) error {
 
 func viewNames(g *gocui.Gui) error {
 	vn := views[ViewNames]
-	if v, err := g.SetView("names", vn.x0, vn.y0, vn.x1, vn.y1); err != nil {
+	if v, err := g.SetView("names", vn.x0, vn.y0, vn.x1, vn.y1);
+		err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -277,7 +291,8 @@ func viewNames(g *gocui.Gui) error {
 
 func viewText(g *gocui.Gui) error {
 	vt := views[ViewText]
-	if v, err := g.SetView("text", vt.x0, vt.y0, vt.x1, vt.y1); err != nil {
+	if v, err := g.SetView("text", vt.x0, vt.y0, vt.x1, vt.y1);
+		err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -289,7 +304,8 @@ func viewText(g *gocui.Gui) error {
 
 func viewStats(g *gocui.Gui) error {
 	vs := views[ViewStats]
-	if v, err := g.SetView("stats", vs.x0, vs.y0, vs.x1, vs.y1); err != nil {
+	if v, err := g.SetView("stats", vs.x0, vs.y0, vs.x1, vs.y1);
+		err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -301,7 +317,8 @@ func viewStats(g *gocui.Gui) error {
 
 func viewHelp(g *gocui.Gui) error {
 	vh := views[ViewHelp]
-	if v, err := g.SetView("help", vh.x0, vh.y0, vh.x1, vh.y1); err != nil {
+	if v, err := g.SetView("help", vh.x0, vh.y0, vh.x1, vh.y1);
+		err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -360,7 +377,8 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 	names.currentName().Annotation = annotationId.name()
 	if names.Data.Meta.CurrentName >= lastReviewedNameIndex-3 {
 		if annotationId == AnnotationNotName {
-			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
+			for i := names.Data.Meta.CurrentName + 1;
+				i < len(names.Data.Names); i++ {
 				name := &names.Data.Names[i]
 				annotationName, err := annotationOfName(name.Annotation)
 				if err != nil {
@@ -373,7 +391,8 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 				}
 			}
 		} else if annotationId != AnnotationNotAssigned {
-			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
+			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names);
+			i++ {
 				name := &names.Data.Names[i]
 				annotationName, err := annotationOfName(name.Annotation)
 				if err != nil {
@@ -456,14 +475,16 @@ func renderTextView(g *gocui.Gui) error {
 	name := names.currentName()
 	cursorLeft := name.OffsetStart - 1
 	newLinesBefore := 0
-	for ; cursorLeft >= 0 && newLinesBefore <= nameViewCenterOffset; cursorLeft-- {
+	for ; cursorLeft >= 0 && newLinesBefore <= nameViewCenterOffset;
+	cursorLeft-- {
 		if text.Original[cursorLeft] == '\n' {
 			newLinesBefore++
 		}
 	}
 	newLinesAfter := 0
 	cursorRight := name.OffsetEnd + 1
-	for ; cursorRight < len(text.Original)-1 && newLinesAfter < maxY/2-1; cursorRight++ {
+	for ; cursorRight < len(text.Original)-1 &&
+		newLinesAfter < maxY/2-1; cursorRight++ {
 		if text.Original[cursorRight] == '\n' {
 			newLinesAfter++
 		}
@@ -581,7 +602,10 @@ func renderStats(g *gocui.Gui) error {
 	viewStats.Clear()
 	fmt.Fprintln(viewStats)
 	fmt.Fprintln(viewStats)
-	statsStrVisibleLen := 69 // The hack, since len(statsStr) >> len(statsStr_visibleChars)
+
+	// The hack, since len(statsStr) >> len(statsStr_visibleChars)
+	statsStrVisibleLen := 69
+
 	for i := 0; i < maxX-statsStrVisibleLen; i++ {
 		fmt.Fprint(viewStats, " ")
 	}

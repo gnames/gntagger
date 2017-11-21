@@ -63,10 +63,12 @@ func PrepareText(path string) *Text {
 	return &Text{path, []rune(string(b))}
 }
 
-func prepareData(text []byte, dir string, file string, width int, bayes *bool) (*Text, *Names, error) {
+func prepareData(text []byte, dir string, file string, width int,
+	bayes *bool) (*Text, *Names, error) {
 	cleanData := sanitizeText(text)
 	alignedText := wordwrap.WrapString(string(cleanData), uint(width))
-	textPath, jsonPath, err := createFilesGently(dir, file, []byte(alignedText), bayes)
+	textPath, jsonPath, err :=
+		createFilesGently(dir, file, []byte(alignedText), bayes)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -122,7 +124,8 @@ func createFilesGently(dir string, file string, text []byte,
 		log.Panic(err)
 		return "", "", err
 	}
-	err = ioutil.WriteFile(filepath.Join(dir, shaFileName), []byte(sha), 0644)
+	err = ioutil.WriteFile(filepath.Join(dir, shaFileName),
+		[]byte(sha), 0644)
 	if err != nil {
 		log.Panic(err)
 		return "", "", err

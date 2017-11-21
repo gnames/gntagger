@@ -44,7 +44,8 @@ func (n *Names) Save() error {
 	return ioutil.WriteFile(n.Path, json, 0644)
 }
 
-func nameStrings(n *gnfinder.Name, current bool, i int, total int) ([]string, error) {
+func nameStrings(n *gnfinder.Name, current bool, i int,
+	total int) ([]string, error) {
 	name := make([]string, 4)
 	nameString := n.Name
 	if current {
@@ -74,7 +75,9 @@ func annotationOfName(annotationName string) (AnnotationId, error) {
 			return AnnotationId(idx), nil
 		}
 	}
-	return -1, errors.New(fmt.Sprintf("annotation name %s isn't supported", annotationName))
+	errMsg :=
+		fmt.Sprintf("annotation name %s isn't supported", annotationName)
+	return -1, errors.New(errMsg)
 }
 
 func (annotation AnnotationId) color() int {
