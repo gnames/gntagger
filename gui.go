@@ -569,9 +569,10 @@ func renderNamesView(g *gocui.Gui) error {
 func renderStats(g *gocui.Gui) error {
 	maxX, _ := g.Size()
 	var (
-		err       error
-		viewStats *gocui.View
-		stats     Stats
+		err        error
+		viewStats  *gocui.View
+		stats      Stats
+		wordStates = map[string]*WordState{}
 	)
 	for _, view := range g.Views() {
 		if view.Name() == "stats" {
@@ -586,16 +587,37 @@ func renderStats(g *gocui.Gui) error {
 		if err != nil {
 			return err
 		}
-		if annotationName != AnnotationNotAssigned {
-			stats.total++
+		ws, ok := wordStates[name.Name]
+		if !ok {
+			ws = &WordState{}
+			wordStates[name.Name] = ws
 		}
 		switch annotationName {
 		case AnnotationNotName:
-			stats.rejectedCount++
+			ws.rejected = true
 		case AnnotationAccepted:
-			stats.acceptedCount++
+			ws.accepted = true
 		case AnnotationUninomial, AnnotationGenus, AnnotationSpecies:
+			ws.modified = true
+		}
+	}
+
+	for _, ws := range wordStates {
+		if ws.accepted {
+			stats.acceptedCount++
+			stats.total++
+		}
+		if ws.rejected {
+			stats.rejectedCount++
+			stats.total++
+		}
+		if ws.modified {
 			stats.modifiedCount++
+			stats.total++
+		}
+		if ws.added {
+			stats.addedCount++
+			stats.total++
 		}
 	}
 
