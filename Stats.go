@@ -5,6 +5,13 @@ import (
 	"math"
 )
 
+type WordState struct {
+	accepted bool
+	rejected bool
+	modified bool
+	added bool
+}
+
 type Stats struct {
 	acceptedCount int
 	rejectedCount int
