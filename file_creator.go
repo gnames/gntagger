@@ -70,7 +70,7 @@ func previousDataChecksums(text *Text) *TextMeta {
 
 func timestamp() string {
 	t := time.Now()
-	return fmt.Sprintf("%s", t.Format("20060102_150405"))
+	return t.Format("20060102_150405")
 }
 
 func fileExistsAlready(text *Text) (bool, error) {
@@ -85,10 +85,7 @@ func fileExistsAlready(text *Text) (bool, error) {
 		}
 	} else if err != nil {
 		err := os.Mkdir(text.Path, 0755)
-		if err != nil {
-			return false, err
-		}
-		return false, nil
+		return false, err
 	} else if !stat.IsDir() {
 		return false, fmt.Errorf("Path %s exists but it is not a dir", text.Path)
 	} else {
@@ -96,16 +93,8 @@ func fileExistsAlready(text *Text) (bool, error) {
 	}
 }
 
-func createFilesGently(text *Text, names *Names) *Names {
-	ok, err := fileExistsAlready(text)
-	if err != nil {
-		log.Panic(err)
-	}
-	if ok {
-		return NamesFromJSON(names.Path)
-	}
-
-	err = ioutil.WriteFile(text.FilePath(InputFile),
+func createFilesGently(text *Text, names *Names) {
+	err := ioutil.WriteFile(text.FilePath(InputFile),
 		[]byte(string(text.Processed)), 0644)
 	if err != nil {
 		log.Panic(err)
@@ -120,6 +109,4 @@ func createFilesGently(text *Text, names *Names) *Names {
 	if err != nil {
 		log.Panic(err)
 	}
-
-	return names
 }

@@ -18,10 +18,6 @@ func (w *Window) width() int {
 	return w.x1 - w.x0
 }
 
-func (w *Window) height() int {
-	return w.y1 - w.y0
-}
-
 type ViewType int
 
 const (
@@ -58,15 +54,13 @@ func InitGUI(t *Text, bayes *bool) {
 
 	initViewsMap(g)
 
-	text.Process(views[ViewText].width() - 1)
-	names = NewNames(text, bayes)
+	width := views[ViewText].width() - 1
+	names = prepareFilesAndText(text, width, bayes)
 	if names.Data.Meta.TotalNames == 0 {
 		g.Close()
 		fmt.Printf("\nNo names had been found in the document\n\n")
 		os.Exit(0)
 	}
-
-	names = createFilesGently(text, names)
 
 	g.SetManagerFunc(Layout)
 

@@ -98,3 +98,19 @@ func preparePath(path string) string {
 	dir := filepath.Join(d, f+"_gntagger")
 	return dir
 }
+
+func prepareFilesAndText(t *Text, w int, bayes *bool) *Names {
+	t.Process(w)
+	exist, err := fileExistsAlready(t)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	if exist {
+		return NamesFromJSON(t.FilePath(NamesFile))
+	} else {
+		names = NewNames(t, bayes)
+		createFilesGently(t, names)
+		return names
+	}
+}
