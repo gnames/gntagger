@@ -9,7 +9,7 @@ type WordState struct {
 	accepted bool
 	rejected bool
 	modified bool
-	added bool
+	added    bool
 }
 
 type Stats struct {
@@ -27,10 +27,6 @@ type Stats struct {
 
 func (s *Stats) precision() float32 {
 	return 1. - float32(s.rejectedCount)/float32(s.total)
-}
-
-func (s *Stats) recall() float32 {
-	return 0.
 }
 
 func (s *Stats) adjustPercentsTo100() {
@@ -57,10 +53,10 @@ func (s *Stats) adjustPercentsTo100() {
 		return s.acceptedPercent + s.rejectedPercent + s.modifiedPercent + s.addedPercent
 	}
 
-	for ; totalPercent() < 100; {
+	for totalPercent() < 100 {
 		maxId := -1
 		for i := 0; i < len(percents); i++ {
-			if percent(rates[i]) - *percents[i] < 0 {
+			if percent(rates[i])-*percents[i] < 0 {
 				continue
 			}
 			if maxId == -1 {
@@ -79,9 +75,10 @@ func (s *Stats) adjustPercentsTo100() {
 
 func (stats *Stats) format() string {
 	var (
-		precisionStr, acceptedPercentStr, rejectedPercentStr, modifiedPercentStr string
-		recallStr                                                                = "n/a"
-		addedRateStr                                                             = "n/a"
+		precisionStr, acceptedPercentStr       string
+		rejectedPercentStr, modifiedPercentStr string
+		recallStr                              = "n/a"
+		addedRateStr                           = "n/a"
 	)
 
 	if stats.total == 0 {

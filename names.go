@@ -1,7 +1,6 @@
 package gntagger
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -36,7 +35,7 @@ func NewNames(text *Text, bayes *bool) *Names {
 		opts = []gnfinder.Opt{gnfinder.WithBayes}
 	}
 
-	data := gnfinder.FindNames(text.Processed, &dict, opts...)
+	data := gnfinder.FindNames([]rune(text.Processed), &dict, opts...)
 	return &Names{Data: data, Path: text.FilePath(NamesFile)}
 }
 
@@ -84,7 +83,7 @@ func annotationOfName(annotationName string) (AnnotationId, error) {
 			return AnnotationId(idx), nil
 		}
 	}
-	return -1, errors.New(fmt.Sprintf("annotation name %s isn't supported", annotationName))
+	return -1, fmt.Errorf("annotation name %s isn't supported", annotationName)
 }
 
 func (annotation AnnotationId) color() int {

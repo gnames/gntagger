@@ -43,7 +43,6 @@ func initViewsMap(g *gocui.Gui) {
 }
 
 func InitGUI(t *Text, bayes *bool) {
-	text = t
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
@@ -54,14 +53,14 @@ func InitGUI(t *Text, bayes *bool) {
 
 	initViewsMap(g)
 
-	width := views[ViewText].width() - 1
-	names = prepareFilesAndText(text, width, bayes)
+	names = prepareFilesAndText(t, views[ViewText].width()-1, bayes)
 	if names.Data.Meta.TotalNames == 0 {
 		g.Close()
 		fmt.Printf("\nNo names had been found in the document\n\n")
 		os.Exit(0)
 	}
 
+	text = t
 	g.SetManagerFunc(Layout)
 
 	if err := Keybindings(g); err != nil {

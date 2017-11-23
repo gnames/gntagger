@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
-	"regexp"
+	"unicode"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/mitchellh/go-wordwrap"
+	wordwrap "github.com/mitchellh/go-wordwrap"
 )
 
 type FileType int
@@ -42,6 +42,8 @@ type Text struct {
 	// Cleaned text after removing non-printable characters and wrapping
 	// according to the width of a user's terminal
 	Processed []rune
+	// Cleaned text in bytes
+	ProcessedBytes []byte
 	// Path to the text file
 	Path string
 	// Files is a map that contains names of the files created by gntagger
@@ -49,8 +51,6 @@ type Text struct {
 	// TextMeta describes provides metainformation about text:
 	// Checksum, Githash, Timestamp
 	TextMeta
-	// width of the user's terminal window
-	width uint
 }
 
 func NewText(data []byte, path string, githash string) *Text {
@@ -76,18 +76,24 @@ func NewText(data []byte, path string, githash string) *Text {
 }
 
 func (t *Text) Process(width int) {
-	cleanData := sanitizeText(t.Raw)
-	alignedText := wordwrap.WrapString(cleanData, uint(width))
+	cleanData := sanitizeText([]rune(string(t.Raw)))
+	alignedText := wordwrap.WrapString(string(cleanData), uint(width))
 	t.Processed = []rune(alignedText)
+	t.ProcessedBytes = []byte(alignedText)
 }
 
 func (t *Text) FilePath(f FileType) string {
 	return filepath.Join(t.Path, t.Files[f])
 }
 
-func sanitizeText(b []byte) string {
-	re := regexp.MustCompile("[^[:print:]\n]")
-	return re.ReplaceAllString(string(b), "")
+func sanitizeText(b []rune) []rune {
+	var res []rune
+	for _, c := range b {
+		if unicode.IsPrint(c) || unicode.IsSpace(c) {
+			res = append(res, c)
+		}
+	}
+	return res
 }
 
 func preparePath(path string) string {

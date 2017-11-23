@@ -95,7 +95,7 @@ func fileExistsAlready(text *Text) (bool, error) {
 
 func createFilesGently(text *Text, names *Names) {
 	err := ioutil.WriteFile(text.FilePath(InputFile),
-		[]byte(string(text.Processed)), 0644)
+		text.ProcessedBytes, 0644)
 	if err != nil {
 		log.Panic(err)
 	}
