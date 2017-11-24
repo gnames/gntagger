@@ -107,6 +107,9 @@ func PrintableBytes(b []byte) []byte {
 }
 
 func Wrap(b []byte, width int) []byte {
+	if width <= 0 {
+		width = 5
+	}
 	var word bytes.Buffer
 	var endReached bool
 	init := make([]byte, 0, len(b))
@@ -125,23 +128,27 @@ func Wrap(b []byte, width int) []byte {
 		} else if err != nil {
 			log.Panic(err)
 		}
+
 		switch {
 		case unicode.IsSpace(c) || endReached:
 			if wordCursor == 0 {
 				lineCursor++
-			}
-			if lineCursor+wordCursor >= width {
-				target.WriteByte('\n')
+			} else if lineCursor+wordCursor >= width {
+				target.WriteRune(rune('\n'))
 				lineCursor = 0
-			} else if c == rune('\n') {
+			}
+
+			if c == rune('\n') {
 				lineCursor = 0
 			} else {
 				lineCursor += wordCursor + 1
 			}
+
 			_, err := word.WriteTo(target)
 			if err != nil {
 				log.Panic(err)
 			}
+
 			target.WriteRune(c)
 			wordCursor = 0
 		default:
@@ -162,15 +169,16 @@ func preparePath(path string) string {
 }
 
 func prepareFilesAndText(t *Text, w int, bayes *bool) *Names {
-	t.Process(w)
 	exist, err := fileExistsAlready(t)
 	if err != nil {
 		log.Panic(err)
 	}
 
 	if exist {
+		processedTextFromFile(t)
 		return NamesFromJSON(t.FilePath(NamesFile))
 	} else {
+		t.Process(w)
 		names = NewNames(t, bayes)
 		createFilesGently(t, names)
 		return names

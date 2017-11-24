@@ -109,6 +109,10 @@ func createFilesGently(t *Text, names *Names) {
 	if err != nil {
 		log.Panic(err)
 	}
+	processedTextFromFile(t)
+}
+
+func processedTextFromFile(t *Text) {
 	// by some reason the text does not show correctly
 	// in GUI unless it is taken from its file
 	txt, err := ioutil.ReadFile(t.FilePath(InputFile))
