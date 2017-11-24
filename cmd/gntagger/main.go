@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 
 	. "github.com/gnames/gntagger"
 )
@@ -74,6 +75,7 @@ func main() {
 	text := NewText(data, path, githash)
 	WarningIfPreviousData(text)
 	InitGUI(text, bayesFlag)
+	defer infoOnExit(text)
 }
 
 func checkStdin() bool {
@@ -83,4 +85,15 @@ func checkStdin() bool {
 		log.Panic(err)
 	}
 	return (stat.Mode() & os.ModeCharDevice) == 0
+}
+
+func infoOnExit(t *Text) {
+	path, err := filepath.Abs(t.Path)
+	if err != nil {
+		log.Panic(err)
+	}
+	fmt.Printf("\n Files with curated names and the text are located in"+
+		"\n\n %s \n\n",
+		path,
+	)
 }

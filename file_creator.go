@@ -93,9 +93,9 @@ func fileExistsAlready(text *Text) (bool, error) {
 	}
 }
 
-func createFilesGently(text *Text, names *Names) {
-	err := ioutil.WriteFile(text.FilePath(InputFile),
-		text.ProcessedBytes, 0644)
+func createFilesGently(t *Text, names *Names) {
+	err := ioutil.WriteFile(t.FilePath(InputFile),
+		t.ProcessedBytes, 0644)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -105,8 +105,15 @@ func createFilesGently(text *Text, names *Names) {
 		log.Panic(err)
 	}
 
-	err = ioutil.WriteFile(text.FilePath(MetaFile), text.TextMeta.ToJSON(), 0644)
+	err = ioutil.WriteFile(t.FilePath(MetaFile), t.TextMeta.ToJSON(), 0644)
 	if err != nil {
 		log.Panic(err)
 	}
+	// by some reason the text does not show correctly
+	// in GUI unless it is taken from its file
+	txt, err := ioutil.ReadFile(t.FilePath(InputFile))
+	if err != nil {
+		log.Panic(err)
+	}
+	t.Processed = []rune(string(txt))
 }

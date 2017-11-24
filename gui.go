@@ -73,39 +73,48 @@ func InitGUI(t *Text, bayes *bool) {
 }
 
 func Keybindings(g *gocui.Gui) error {
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
+		quit); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone, save); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone,
+		save); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone, listBack); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone,
+		listBack); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone, listForward); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone,
+		listForward); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeySpace, gocui.ModNone, noName); err != nil {
+	if err := g.SetKeybinding("", gocui.KeySpace, gocui.ModNone,
+		noName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'y', gocui.ModNone, yesName); err != nil {
+	if err := g.SetKeybinding("", 'y', gocui.ModNone,
+		yesName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 's', gocui.ModNone, speciesName); err != nil {
+	if err := g.SetKeybinding("", 's', gocui.ModNone,
+		speciesName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'g', gocui.ModNone, genusName); err != nil {
+	if err := g.SetKeybinding("", 'g', gocui.ModNone,
+		genusName); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", 'u', gocui.ModNone, uninomialName); err != nil {
+	if err := g.SetKeybinding("", 'u', gocui.ModNone,
+		uninomialName); err != nil {
 		return err
 	}
 
@@ -314,27 +323,24 @@ func listBack(g *gocui.Gui, _ *gocui.View) error {
 }
 
 func renderTextView(g *gocui.Gui) error {
-	var (
-		viewText *gocui.View
-	)
-	for _, view := range g.Views() {
-		if view.Name() == "text" {
-			viewText = view
-			break
-		}
+	vText, err := g.View("text")
+	if err != nil {
+		log.Panic()
 	}
 
 	_, maxY := g.Size()
-	viewText.Clear()
+	vText.Clear()
 
 	name := names.GetCurrentName()
 	cursorLeft := name.OffsetStart - 1
+
 	newLinesBefore := 0
 	for ; cursorLeft >= 0 && newLinesBefore <= nameViewCenterOffset; cursorLeft-- {
 		if text.Processed[cursorLeft] == '\n' {
 			newLinesBefore++
 		}
 	}
+
 	newLinesAfter := 0
 	cursorRight := name.OffsetEnd + 1
 	for ; cursorRight < len(text.Processed)-1 && newLinesAfter < maxY/2-1; cursorRight++ {
@@ -342,6 +348,7 @@ func renderTextView(g *gocui.Gui) error {
 			newLinesAfter++
 		}
 	}
+
 	color := AnnotationNotAssigned.color()
 	annotationName, err := annotationOfName(name.Annotation)
 	if err != nil {
@@ -351,31 +358,26 @@ func renderTextView(g *gocui.Gui) error {
 		color = AnnotationNotName.color()
 	}
 	for i := 0; i <= nameViewCenterOffset-newLinesBefore; i++ {
-		fmt.Fprintln(viewText)
+		fmt.Fprintln(vText)
 	}
-	_, err = fmt.Fprintf(viewText, "%s\033[40;%d;1m%s\033[0m%s",
+	_, err = fmt.Fprintf(vText, "%s\033[40;%d;1m%s\033[0m%s",
 		string(text.Processed[cursorLeft+1:name.OffsetStart]),
 		color,
 		string(text.Processed[name.OffsetStart:name.OffsetEnd]),
 		string(text.Processed[name.OffsetEnd:cursorRight]),
 	)
 	for i := 0; i <= newLinesAfter-nameViewCenterOffset+1; i++ {
-		fmt.Fprintln(viewText)
+		fmt.Fprintln(vText)
 	}
 	return err
 }
 
 func renderNamesView(g *gocui.Gui) error {
-	var (
-		err       error
-		viewNames *gocui.View
-	)
-	for _, view := range g.Views() {
-		if view.Name() == "names" {
-			viewNames = view
-			break
-		}
+	viewNames, err := g.View("names")
+	if err != nil {
+		log.Panic(err)
 	}
+
 	saveCount++
 	if saveCount >= 30 {
 		if err := save(g, viewNames); err != nil {
@@ -424,16 +426,12 @@ func renderNamesView(g *gocui.Gui) error {
 func renderStats(g *gocui.Gui) error {
 	maxX, _ := g.Size()
 	var (
-		err        error
-		viewStats  *gocui.View
 		stats      Stats
 		wordStates = map[string]*WordState{}
 	)
-	for _, view := range g.Views() {
-		if view.Name() == "stats" {
-			viewStats = view
-			break
-		}
+	viewStats, err := g.View("stats")
+	if err != nil {
+		log.Panic(err)
 	}
 
 	for nameIdx := 0; nameIdx <= lastReviewedNameIndex; nameIdx++ {

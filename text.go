@@ -1,14 +1,15 @@
 package gntagger
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"fmt"
+	"io"
 	"log"
 	"path/filepath"
 	"unicode"
 
 	jsoniter "github.com/json-iterator/go"
-	wordwrap "github.com/mitchellh/go-wordwrap"
 )
 
 type FileType int
@@ -76,24 +77,79 @@ func NewText(data []byte, path string, githash string) *Text {
 }
 
 func (t *Text) Process(width int) {
-	cleanData := sanitizeText([]rune(string(t.Raw)))
-	alignedText := wordwrap.WrapString(string(cleanData), uint(width))
-	t.Processed = []rune(alignedText)
-	t.ProcessedBytes = []byte(alignedText)
+	printable := PrintableBytes(t.Raw)
+	t.ProcessedBytes = Wrap(printable, width)
+	t.Processed = []rune(string(t.ProcessedBytes))
 }
 
 func (t *Text) FilePath(f FileType) string {
 	return filepath.Join(t.Path, t.Files[f])
 }
 
-func sanitizeText(b []rune) []rune {
-	var res []rune
-	for _, c := range b {
+func PrintableBytes(b []byte) []byte {
+	init := make([]byte, 0, len(b))
+	target := bytes.NewBuffer(init)
+	source := bytes.NewReader(b)
+
+	for {
+		c, _, err := source.ReadRune()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Panic(err)
+		}
+
 		if unicode.IsPrint(c) || unicode.IsSpace(c) {
-			res = append(res, c)
+			target.WriteRune(c)
 		}
 	}
-	return res
+	return target.Bytes()
+}
+
+func Wrap(b []byte, width int) []byte {
+	var word bytes.Buffer
+	var endReached bool
+	init := make([]byte, 0, len(b))
+	target := bytes.NewBuffer(init)
+	source := bytes.NewReader(b)
+	lineCursor := 0
+	wordCursor := 0
+
+	for {
+		if endReached {
+			break
+		}
+		c, _, err := source.ReadRune()
+		if err == io.EOF {
+			endReached = true
+		} else if err != nil {
+			log.Panic(err)
+		}
+		switch {
+		case unicode.IsSpace(c) || endReached:
+			if wordCursor == 0 {
+				lineCursor++
+			}
+			if lineCursor+wordCursor >= width {
+				target.WriteByte('\n')
+				lineCursor = 0
+			} else if c == rune('\n') {
+				lineCursor = 0
+			} else {
+				lineCursor += wordCursor + 1
+			}
+			_, err := word.WriteTo(target)
+			if err != nil {
+				log.Panic(err)
+			}
+			target.WriteRune(c)
+			wordCursor = 0
+		default:
+			word.WriteRune(c)
+			wordCursor++
+		}
+	}
+	return target.Bytes()
 }
 
 func preparePath(path string) string {

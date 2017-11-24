@@ -35,7 +35,7 @@ func NewNames(text *Text, bayes *bool) *Names {
 		opts = []gnfinder.Opt{gnfinder.WithBayes}
 	}
 
-	data := gnfinder.FindNames([]rune(text.Processed), &dict, opts...)
+	data := gnfinder.FindNames(text.Processed, &dict, opts...)
 	return &Names{Data: data, Path: text.FilePath(NamesFile)}
 }
 
