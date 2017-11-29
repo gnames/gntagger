@@ -57,7 +57,7 @@ func nameStrings(n *gnfinder.Name, current bool, i int, total int) ([]string, er
 	name := make([]string, 4)
 	nameString := n.Name
 	if current {
-		nameString = fmt.Sprintf("\033[43;30;1m%s\033[0m", nameString)
+		nameString = fmt.Sprintf("\033[33;40;1m%s\033[0m", nameString)
 	}
 	name[0] = fmt.Sprintf("    %d/%d", i+1, total)
 	if n.Odds != 0.0 {

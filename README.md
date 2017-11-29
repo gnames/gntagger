@@ -26,7 +26,7 @@ pdftotext doc.pdf doc.txt
 go build -ldflags "-X main.buildstamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'` \
                    -X main.githash=`git rev-parse HEAD | cut -c1-7` \
                    -X main.gittag=`git describe --tags`" \
-         -o gntag -a cmd/gntagger/main.go
+         -o gntagger -a cmd/gntagger/main.go
 ```
 
 
