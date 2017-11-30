@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	jsoniter "github.com/json-iterator/go"
+	"runtime"
 )
 
 type FileType int
@@ -77,6 +78,9 @@ func NewText(data []byte, path string, githash string) *Text {
 }
 
 func (t *Text) Process(width int) {
+	if runtime.GOOS == "windows" {
+		width = 100
+	}
 	printable := PrintableBytes(t.Raw)
 	t.ProcessedBytes = Wrap(printable, width)
 	t.Processed = []rune(string(t.ProcessedBytes))
@@ -99,7 +103,7 @@ func PrintableBytes(b []byte) []byte {
 			log.Panic(err)
 		}
 
-		if unicode.IsPrint(c) || unicode.IsSpace(c) {
+		if (unicode.IsPrint(c) || unicode.IsSpace(c)) && c != rune('\r') && c != rune('\v') {
 			target.WriteRune(c)
 		}
 	}

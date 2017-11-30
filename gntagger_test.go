@@ -3,6 +3,8 @@ package gntagger_test
 import (
 	. "github.com/gnames/gntagger"
 
+	"path/filepath"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -12,7 +14,7 @@ var _ = Describe("Gntagger", func() {
 		Describe("NewText", func() {
 			It("creates new Text object", func() {
 				t := NewText(dataLong, pathLong, "abcd")
-				Expect(t.Path).To(Equal("testdata/seashells_book.txt_gntagger"))
+				Expect(t.Path).To(Equal(filepath.Join("testdata", "seashells_book.txt_gntagger")))
 			})
 		})
 
@@ -30,7 +32,7 @@ var _ = Describe("Gntagger", func() {
 				t := NewText(dataLong, pathLong, "abcd")
 				t.Process(80)
 				n := NewNames(t, &bayes)
-				Expect(n.Path).To(Equal("testdata/seashells_book.txt_gntagger/names.json"))
+				Expect(n.Path).To(Equal(filepath.Join("testdata", "seashells_book.txt_gntagger", "names.json")))
 				Expect(n.Data.Meta.TotalNames).To(BeNumerically(">", 4000))
 			})
 		})
