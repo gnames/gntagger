@@ -18,13 +18,13 @@ is significantly faster than curaion made in a text editor or pdf viewer.
 ## Installation
 
 The  program is just an executable file that runs from a command line. Download
-latest zip or tar file for your operating system, extract the file and place it
-somehere in your `PATH`, so it is visible by your system.
+[latest zip or tar file][releases] for your operating system, extract the file
+and place it somehere in your `PATH`, so it is visible by your system.
+
+## Conversion of PDF to text
 
 gntagger works with plain texts, so if you need to find names in a PDF file,
 first you need to convert it to text.
-
-## Conversion of PDF to text
 
 ### Linux
 
@@ -150,7 +150,6 @@ ginkgo
 go test
 ```
 
-
 ### Build executable
 
 ```bash
@@ -166,3 +165,4 @@ go build -ldflags "-X main.buildstamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'` \
 [doc-img]: https://godoc.org/github.com/gnames/gntagger?status.png
 [doc]: https://godoc.org/github.com/gnames/gntagger
 [xpdf-tools]: https://www.xpdfreader.com/download.html
+[releases]: https://github.com/gnames/gntagger/releases/latest
