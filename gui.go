@@ -415,8 +415,9 @@ func renderNamesView(g *gocui.Gui) error {
 		fmt.Fprintln(viewNames, strings.Join(nameStrs, "\n"))
 	}
 	if err = copyCurrentNameToClipboard(); err != nil {
-		return err
+		text.AddError(fmt.Errorf("\033[31;1mCurrent names did not go to clipboard: %s\033[0m", err))
 	}
+
 	if err = renderStats(g); err != nil {
 		return err
 	}

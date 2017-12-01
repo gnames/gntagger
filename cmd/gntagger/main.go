@@ -96,4 +96,7 @@ func infoOnExit(t *Text) {
 		"\n\n %s \n\n",
 		path,
 	)
+	for _, e := range t.Errors() {
+		fmt.Printf("\n %s \n\n", e.Error())
+	}
 }

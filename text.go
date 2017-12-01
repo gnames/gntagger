@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"unicode"
 
-	jsoniter "github.com/json-iterator/go"
 	"runtime"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 type FileType int
@@ -53,6 +54,8 @@ type Text struct {
 	// TextMeta describes provides metainformation about text:
 	// Checksum, Githash, Timestamp
 	TextMeta
+	// errors that accumulated during the process. They will be shown on exit.
+	errors map[string]error
 }
 
 func NewText(data []byte, path string, githash string) *Text {
@@ -75,6 +78,24 @@ func NewText(data []byte, path string, githash string) *Text {
 		},
 	}
 	return text
+}
+
+func (t *Text) Errors() []error {
+	res := make([]error, 0, len(t.errors))
+	for _, v := range t.errors {
+		res = append(res, v)
+	}
+	return res
+}
+
+func (t *Text) AddError(err error) {
+	if t.errors == nil {
+		t.errors = make(map[string]error)
+	}
+	hash := fmt.Sprintf("%x", sha1.Sum([]byte(err.Error())))
+	if _, ok := t.errors[hash]; !ok {
+		t.errors[hash] = err
+	}
 }
 
 func (t *Text) Process(width int) {
