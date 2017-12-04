@@ -3,6 +3,8 @@ package gntagger
 import (
 	"fmt"
 	"math"
+
+	"github.com/gnames/gntagger/annotation"
 )
 
 type WordState struct {
@@ -102,13 +104,13 @@ func (stats *Stats) format() string {
 			"\033[%d;40;2mAdd. %s \033[0m",
 		precisionStr,
 		recallStr,
-		AnnotationAccepted.color(),
+		annotation.Accepted.Color(),
 		acceptedPercentStr,
-		AnnotationNotName.color(),
+		annotation.NotName.Color(),
 		rejectedPercentStr,
-		AnnotationSpecies.color(),
+		annotation.Species.Color(),
 		modifiedPercentStr,
-		AnnotationNotAssigned.color(),
+		annotation.NotAssigned.Color(),
 		addedRateStr,
 	)
 	return statsStr

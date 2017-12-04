@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/atotto/clipboard"
+	"github.com/gnames/gntagger/annotation"
 	"github.com/jroimartin/gocui"
 )
 
@@ -215,57 +216,57 @@ func save(_ *gocui.Gui, _ *gocui.View) error {
 }
 
 func speciesName(g *gocui.Gui, _ *gocui.View) error {
-	err := setKey(g, AnnotationSpecies)
+	err := setKey(g, annotation.Species)
 	return err
 }
 
 func genusName(g *gocui.Gui, _ *gocui.View) error {
-	err := setKey(g, AnnotationGenus)
+	err := setKey(g, annotation.Genus)
 	return err
 }
 
 func uninomialName(g *gocui.Gui, _ *gocui.View) error {
-	err := setKey(g, AnnotationUninomial)
+	err := setKey(g, annotation.Uninomial)
 	return err
 }
 
 func yesName(g *gocui.Gui, _ *gocui.View) error {
-	err := setKey(g, AnnotationAccepted)
+	err := setKey(g, annotation.Accepted)
 	return err
 }
 
 func noName(g *gocui.Gui, _ *gocui.View) error {
-	err := setKey(g, AnnotationNotName)
+	err := setKey(g, annotation.NotName)
 	return err
 }
 
-func setKey(g *gocui.Gui, annotationId AnnotationId) error {
+func setKey(g *gocui.Gui, a annotation.Annotation) error {
 	var err error
-	names.GetCurrentName().Annotation = annotationId.name()
+	names.GetCurrentName().Annotation = a.String()
 	if names.Data.Meta.CurrentName >= lastReviewedNameIndex-3 {
-		if annotationId == AnnotationNotName {
+		if a == annotation.NotName {
 			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
 				name := &names.Data.Names[i]
-				annotationName, err := annotationOfName(name.Annotation)
+				newAnn, err := annotation.NewAnnotation(name.Annotation)
 				if err != nil {
 					return nil
 				}
 				if names.GetCurrentName().Name == name.Name &&
-					(annotationName == AnnotationNotAssigned ||
+					(newAnn.In(annotation.NotAssigned, annotation.Doubtful) ||
 						i < lastReviewedNameIndex) {
-					name.Annotation = AnnotationNotName.name()
+					name.Annotation = annotation.NotName.String()
 				}
 			}
-		} else if annotationId != AnnotationNotAssigned {
+		} else if a != annotation.NotAssigned {
 			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
 				name := &names.Data.Names[i]
-				annotationName, err := annotationOfName(name.Annotation)
+				newAnn, err := annotation.NewAnnotation(name.Annotation)
 				if err != nil {
 					return err
 				}
 				if names.GetCurrentName().Name == name.Name &&
-					annotationName == AnnotationNotName {
-					name.Annotation = AnnotationNotAssigned.name()
+					newAnn == annotation.NotName {
+					name.Annotation = annotation.NotAssigned.String()
 				}
 			}
 		}
@@ -283,12 +284,14 @@ func setKey(g *gocui.Gui, annotationId AnnotationId) error {
 func listForward(g *gocui.Gui, _ *gocui.View) error {
 	var err error
 	name := names.GetCurrentName()
-	annotationName, err := annotationOfName(name.Annotation)
+	ann, err := annotation.NewAnnotation(name.Annotation)
 	if err != nil {
 		return nil
 	}
-	if annotationName == AnnotationNotAssigned {
-		name.Annotation = AnnotationAccepted.name()
+	if ann == annotation.NotAssigned {
+		name.Annotation = annotation.Accepted.String()
+	} else if ann == annotation.Doubtful {
+		name.Annotation = annotation.NotName.String()
 	}
 	step := 1
 	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 {
@@ -349,13 +352,13 @@ func renderTextView(g *gocui.Gui) error {
 		}
 	}
 
-	color := AnnotationNotAssigned.color()
-	annotationName, err := annotationOfName(name.Annotation)
+	color := annotation.NotAssigned.Color()
+	ann, err := annotation.NewAnnotation(name.Annotation)
 	if err != nil {
 		return nil
 	}
-	if annotationName == AnnotationNotName {
-		color = AnnotationNotName.color()
+	if ann == annotation.NotName {
+		color = annotation.NotName.Color()
 	}
 	for i := 0; i <= nameViewCenterOffset-newLinesBefore; i++ {
 		fmt.Fprintln(vText)
@@ -437,7 +440,7 @@ func renderStats(g *gocui.Gui) error {
 
 	for nameIdx := 0; nameIdx <= lastReviewedNameIndex; nameIdx++ {
 		name := names.Data.Names[nameIdx]
-		annotationName, err := annotationOfName(name.Annotation)
+		ann, err := annotation.NewAnnotation(name.Annotation)
 		if err != nil {
 			return err
 		}
@@ -446,12 +449,12 @@ func renderStats(g *gocui.Gui) error {
 			ws = &WordState{}
 			wordStates[name.Name] = ws
 		}
-		switch annotationName {
-		case AnnotationNotName:
+		switch ann {
+		case annotation.NotName:
 			ws.rejected = true
-		case AnnotationAccepted:
+		case annotation.Accepted:
 			ws.accepted = true
-		case AnnotationUninomial, AnnotationGenus, AnnotationSpecies:
+		case annotation.Uninomial, annotation.Genus, annotation.Species:
 			ws.modified = true
 		}
 	}

@@ -7,17 +7,7 @@ import (
 	"math"
 
 	"github.com/gnames/gnfinder"
-)
-
-type AnnotationId int
-
-const (
-	AnnotationNotAssigned AnnotationId = iota
-	AnnotationNotName
-	AnnotationAccepted
-	AnnotationUninomial
-	AnnotationGenus
-	AnnotationSpecies
+	"github.com/gnames/gntagger/annotation"
 )
 
 type Names struct {
@@ -28,24 +18,22 @@ type Names struct {
 }
 
 func NewNames(text *Text, bayes *bool) *Names {
-	var opts []gnfinder.Opt
 	dict := gnfinder.LoadDictionary()
 
+	opts := []gnfinder.Opt{gnfinder.WithBayesThreshold(1)}
 	if *bayes {
-		opts = []gnfinder.Opt{gnfinder.WithBayes}
+		opts = append(opts, gnfinder.WithBayes)
 	}
 
 	data := gnfinder.FindNames(text.Processed, &dict, opts...)
-	return &Names{Data: data, Path: text.FilePath(NamesFile)}
-}
 
-var annotationNames = []string{
-	"",
-	"NotName",
-	"Accepted",
-	"Uninomial",
-	"Genus",
-	"Species",
+	for i, _ := range data.Names {
+		n := &data.Names[i]
+		if n.Odds < 100 {
+			n.Annotation = annotation.Doubtful.String()
+		}
+	}
+	return &Names{Data: data, Path: text.FilePath(NamesFile)}
 }
 
 func (n *Names) Save() error {
@@ -60,59 +48,17 @@ func nameStrings(n *gnfinder.Name, current bool, i int, total int) ([]string, er
 		nameString = fmt.Sprintf("\033[33;40;1m%s\033[0m", nameString)
 	}
 	name[0] = fmt.Sprintf("    %d/%d", i+1, total)
+	name[1] = n.Type
 	if n.Odds != 0.0 {
-		name[1] = fmt.Sprintf("Log Odds: %0.2f", math.Log10(n.Odds))
-	} else {
-		name[1] = fmt.Sprintf("Type: %s", n.Type)
+		name[1] = fmt.Sprintf("%s (Score: %0.2f)", name[1], math.Log10(n.Odds))
 	}
 	name[2] = fmt.Sprintf("Name: %s", nameString)
-	annotation, err := annotationOfName(n.Annotation)
+	annotation, err := annotation.NewAnnotation(n.Annotation)
 	if err != nil {
 		return nil, err
 	}
-	name[3] = annotation.formatString()
+	name[3] = annotation.Format()
 	return name, nil
-}
-
-func annotationOfName(annotationName string) (AnnotationId, error) {
-	if annotationName == "NotAssigned" {
-		return AnnotationNotAssigned, nil
-	}
-	for idx, an := range annotationNames {
-		if an == annotationName {
-			return AnnotationId(idx), nil
-		}
-	}
-	return -1, fmt.Errorf("annotation name %s isn't supported", annotationName)
-}
-
-func (annotation AnnotationId) color() int {
-	switch annotation {
-	case AnnotationAccepted:
-		return 32 //green
-	case AnnotationNotName:
-		return 31 //red
-	case AnnotationSpecies:
-		return 35 //magenta
-	case AnnotationGenus:
-		return 35 //magenta
-	case AnnotationUninomial:
-		return 35 //magenta
-	case AnnotationNotAssigned:
-	default:
-		return 33
-	}
-	return 33
-}
-
-func (annotation AnnotationId) name() string {
-	return annotationNames[int(annotation)]
-}
-
-func (annotation AnnotationId) formatString() string {
-	color := annotation.color()
-	name := annotation.name()
-	return fmt.Sprintf("\033[%d;40;2mAnnot: %s\033[0m", color, name)
 }
 
 func NamesFromJSON(path string) *Names {
