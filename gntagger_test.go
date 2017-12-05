@@ -28,10 +28,11 @@ var _ = Describe("Gntagger", func() {
 
 		Describe("NewNames", func() {
 			It("creates new Names object", func() {
-				var bayes bool
+				gnt := NewGnTagger()
+				gnt.Bayes = true
 				t := NewText(dataLong, pathLong, "abcd")
 				t.Process(80)
-				n := NewNames(t, &bayes)
+				n := NewNames(t, gnt)
 				Expect(n.Path).To(Equal(filepath.Join("testdata", "seashells_book.txt_gntagger", "names.json")))
 				Expect(n.Data.Meta.TotalNames).To(BeNumerically(">", 4000))
 			})
@@ -44,30 +45,14 @@ var _ = Describe("Gntagger", func() {
 				Expect(cn.Name).To(Equal("Phaeophleophleospora epicoccoides"))
 			})
 		})
-
-		Describe("Wrap", func() {
-			It("wraps text according to given width", func() {
-				t := "This is a text that has English and Russian.\n" +
-					"Например, мы вводим большое количество русских    знаков в  " +
-					"Unicode and see if it works.\nIn case of very long words they " +
-					"should-occupy-one-line-and-go-over-the-limit. " +
-					"Lets say we have a CR \r\n " +
-					"as well and the end does not have a new line........" +
-					"...................."
-				res := Wrap([]byte(t), 35)
-				output := "This is a text that has English \n" +
-					"and Russian.\n" +
-					"Например, мы вводим большое"
-				Expect(string(res[0:96])).To(Equal(output))
-			})
-		})
 	})
 })
 
 func makeNames() *Names {
-	var bayes bool
+	gnt := NewGnTagger()
+	gnt.Bayes = true
 	t := NewText(dataShort, pathShort, "abcd")
 	t.Process(80)
-	n := NewNames(t, &bayes)
+	n := NewNames(t, gnt)
 	return n
 }

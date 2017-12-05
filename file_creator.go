@@ -12,9 +12,9 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-// WarningIfPreviousData takes *Text pointer. It warns if previously created
+// ShowWarningIfPreviousData takes *Text pointer. It warns if previously created
 // data exist and backups the old data.
-func WarningIfPreviousData(text *Text) {
+func ShowWarningIfPreviousData(text *Text) {
 	var warning string
 	if old := previousDataChecksums(text); old.Checksum != "" {
 		if text.Checksum != old.Checksum {
@@ -88,9 +88,9 @@ func fileExistsAlready(text *Text) (bool, error) {
 		return false, err
 	} else if !stat.IsDir() {
 		return false, fmt.Errorf("Path %s exists but it is not a dir", text.Path)
-	} else {
-		return false, nil
 	}
+
+	return false, nil
 }
 
 func createFilesGently(t *Text, names *Names) {

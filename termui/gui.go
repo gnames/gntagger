@@ -1,4 +1,4 @@
-package gntagger
+package termui
 
 import (
 	"fmt"
@@ -7,10 +7,12 @@ import (
 	"strings"
 
 	"github.com/atotto/clipboard"
+	"github.com/gnames/gntagger"
 	"github.com/gnames/gntagger/annotation"
 	"github.com/jroimartin/gocui"
 )
 
+// Window keeps information about windows parameters
 type Window struct {
 	x0, y0, x1, y1 int
 }
@@ -19,18 +21,23 @@ func (w *Window) width() int {
 	return w.x1 - w.x0
 }
 
+// ViewType describes possibl window view types
 type ViewType int
 
 const (
+	// ViewText is a text view
 	ViewText ViewType = iota
+	// ViewNames is a names view
 	ViewNames
+	// ViewHelp is a help view
 	ViewHelp
 )
 
 var (
+	gnt                   = &gntagger.GnTagger{}
 	views                 = map[ViewType]*Window{}
-	names                 = &Names{}
-	text                  = &Text{}
+	names                 = &gntagger.Names{}
+	text                  = &gntagger.Text{}
 	saveCount             = 0
 	nameViewCenterOffset  = 0
 	lastReviewedNameIndex = 0
@@ -43,7 +50,9 @@ func initViewsMap(g *gocui.Gui) {
 	views[ViewHelp] = &Window{-1, maxY - 2, maxX, maxY}
 }
 
-func InitGUI(t *Text, bayes *bool) {
+// InitGUI initializes command line interface and sets text and names variables
+func InitGUI(t *gntagger.Text, gntag *gntagger.GnTagger) {
+	gnt = gntag
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
@@ -54,7 +63,7 @@ func InitGUI(t *Text, bayes *bool) {
 
 	initViewsMap(g)
 
-	names = prepareFilesAndText(t, views[ViewText].width()-1, bayes)
+	names = gntagger.PrepareFilesAndText(t, views[ViewText].width()-1, gnt)
 	if names.Data.Meta.TotalNames == 0 {
 		g.Close()
 		fmt.Printf("\nNo names had been found in the document\n\n")
@@ -73,6 +82,7 @@ func InitGUI(t *Text, bayes *bool) {
 	}
 }
 
+// Keybindings sets hotkeys for oprations on the text and names
 func Keybindings(g *gocui.Gui) error {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
 		quit); err != nil {
@@ -122,6 +132,7 @@ func Keybindings(g *gocui.Gui) error {
 	return nil
 }
 
+// Layout describes how different vindows are displayed on the screen
 func Layout(g *gocui.Gui) error {
 	var err error
 	initViewsMap(g)
@@ -244,17 +255,17 @@ func setKey(g *gocui.Gui, a annotation.Annotation) error {
 	var err error
 	names.GetCurrentName().Annotation = a.String()
 	if names.Data.Meta.CurrentName >= lastReviewedNameIndex-3 {
-		if a == annotation.NotName {
+		if a.In(annotation.NotName, annotation.Accepted) {
 			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
 				name := &names.Data.Names[i]
-				newAnn, err := annotation.NewAnnotation(name.Annotation)
+				nameAnn, err := annotation.NewAnnotation(name.Annotation)
 				if err != nil {
 					return nil
 				}
 				if names.GetCurrentName().Name == name.Name &&
-					(newAnn.In(annotation.NotAssigned, annotation.Doubtful) ||
+					(nameAnn.In(annotation.NotAssigned, annotation.Doubtful) ||
 						i < lastReviewedNameIndex) {
-					name.Annotation = annotation.NotName.String()
+					name.Annotation = a.String()
 				}
 			}
 		} else if a != annotation.NotAssigned {
@@ -291,7 +302,10 @@ func listForward(g *gocui.Gui, _ *gocui.View) error {
 	if ann == annotation.NotAssigned {
 		name.Annotation = annotation.Accepted.String()
 	} else if ann == annotation.Doubtful {
-		name.Annotation = annotation.NotName.String()
+		err := setKey(g, annotation.NotName)
+		if err != nil {
+			return nil
+		}
 	}
 	step := 1
 	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 {
@@ -315,7 +329,7 @@ func listBack(g *gocui.Gui, _ *gocui.View) error {
 	if names.Data.Meta.CurrentName == 0 {
 		return nil
 	}
-	names.Data.Meta.CurrentName -= 1
+	names.Data.Meta.CurrentName--
 	if err = renderNamesView(g); err != nil {
 		return err
 	}
@@ -352,14 +366,11 @@ func renderTextView(g *gocui.Gui) error {
 		}
 	}
 
-	color := annotation.NotAssigned.Color()
 	ann, err := annotation.NewAnnotation(name.Annotation)
 	if err != nil {
 		return nil
 	}
-	if ann == annotation.NotName {
-		color = annotation.NotName.Color()
-	}
+	color := ann.Color()
 	for i := 0; i <= nameViewCenterOffset-newLinesBefore; i++ {
 		fmt.Fprintln(vText)
 	}
@@ -411,7 +422,7 @@ func renderNamesView(g *gocui.Gui) error {
 	for i := namesSliceLeft; i < namesSliceRight; i++ {
 		current := i == names.Data.Meta.CurrentName
 		nm := names.Data.Names[i]
-		nameStrs, err := nameStrings(&nm, current, i, namesTotal)
+		nameStrs, err := gntagger.NameStrings(&nm, current, i, namesTotal)
 		if err != nil {
 			return err
 		}
@@ -428,11 +439,9 @@ func renderNamesView(g *gocui.Gui) error {
 }
 
 func renderStats(g *gocui.Gui) error {
+	var stats Stats
 	maxX, _ := g.Size()
-	var (
-		stats      Stats
-		wordStates = map[string]*WordState{}
-	)
+	wordStates := make(map[string]*WordState)
 	viewStats, err := g.View("stats")
 	if err != nil {
 		log.Panic(err)
@@ -457,37 +466,48 @@ func renderStats(g *gocui.Gui) error {
 		case annotation.Uninomial, annotation.Genus, annotation.Species:
 			ws.modified = true
 		}
-	}
 
-	for _, ws := range wordStates {
-		if ws.accepted {
-			stats.acceptedCount++
-			stats.total++
-		}
-		if ws.rejected {
-			stats.rejectedCount++
-			stats.total++
-		}
-		if ws.modified {
-			stats.modifiedCount++
-			stats.total++
-		}
-		if ws.added {
-			stats.addedCount++
-			stats.total++
+		if name.Odds != 0.0 && name.Odds < gnt.OddsHigh {
+			ws.doubtful = true
 		}
 	}
 
+	updateStats(&stats, wordStates)
 	viewStats.Clear()
 	fmt.Fprintln(viewStats)
 	fmt.Fprintln(viewStats)
-	statsStrVisibleLen := 69 // The hack, since len(statsStr) >> len(statsStr_visibleChars)
-	for i := 0; i < maxX-statsStrVisibleLen; i++ {
+	statsStr := stats.format()
+	statsStrVisibleLen := maxX - len(statsStr) + 32 // to compensate invisible chars
+	for i := 0; i < statsStrVisibleLen; i++ {
 		fmt.Fprint(viewStats, " ")
 	}
-	fmt.Fprint(viewStats, stats.format())
+	fmt.Fprintf(viewStats, "%s", statsStr)
 
 	return err
+}
+
+func updateStats(s *Stats, wordStates map[string]*WordState) {
+	for _, ws := range wordStates {
+		if ws.doubtful {
+			if ws.accepted || ws.modified {
+				s.addedCount++
+				s.total++
+			}
+		} else {
+			if ws.accepted {
+				s.acceptedCount++
+				s.total++
+			}
+			if ws.rejected {
+				s.rejectedCount++
+				s.total++
+			}
+			if ws.modified {
+				s.modifiedCount++
+				s.total++
+			}
+		}
+	}
 }
 
 func copyCurrentNameToClipboard() error {

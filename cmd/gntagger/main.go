@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	. "github.com/gnames/gntagger"
+	"github.com/gnames/gntagger/termui"
 )
 
 var (
@@ -40,9 +41,13 @@ func main() {
 		err  error
 	)
 
+	gnt := NewGnTagger()
+
 	versionFlag := flag.Bool("version", false, "Print version")
 	bayesFlag := flag.Bool("bayes", false, "Use bayes name-finding")
 	flag.Parse()
+
+	gnt.Bayes = *bayesFlag
 
 	if *versionFlag {
 		fmt.Printf(" Git commit hash: %s\n Git tag: %s\n UTC Build Time: %s\n\n",
@@ -69,12 +74,12 @@ func main() {
 		}
 	default:
 		fmt.Printf("Please enter the path to your text file\n")
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	text := NewText(data, path, githash)
-	WarningIfPreviousData(text)
-	InitGUI(text, bayesFlag)
+	ShowWarningIfPreviousData(text)
+	termui.InitGUI(text, gnt)
 	defer infoOnExit(text)
 }
 

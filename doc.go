@@ -1,5 +1,5 @@
 /*
-gntagger is a command line application that helps to find/curate scientific
+Package gntagger is a command line application that helps to find/curate scientific
 names interactively. For example if there is a monograph about a genus with
 hundreds of scientific names, gntagger will find names automatically and then
 will let the user to verify found names interactively.

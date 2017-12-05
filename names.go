@@ -10,6 +10,7 @@ import (
 	"github.com/gnames/gntagger/annotation"
 )
 
+// Names is an object that keeps output of a name finder and the path where to save this data on disk
 type Names struct {
 	// Path to json file with names
 	Path string
@@ -17,31 +18,34 @@ type Names struct {
 	Data gnfinder.Output
 }
 
-func NewNames(text *Text, bayes *bool) *Names {
+// NewNames uses a name finder or existing information to return Names structure generated from a text
+func NewNames(text *Text, gnt *GnTagger) *Names {
 	dict := gnfinder.LoadDictionary()
 
-	opts := []gnfinder.Opt{gnfinder.WithBayesThreshold(1)}
-	if *bayes {
+	opts := []gnfinder.Opt{gnfinder.WithBayesThreshold(gnt.OddsLow)}
+	if gnt.Bayes {
 		opts = append(opts, gnfinder.WithBayes)
 	}
 
 	data := gnfinder.FindNames(text.Processed, &dict, opts...)
 
-	for i, _ := range data.Names {
+	for i := range data.Names {
 		n := &data.Names[i]
-		if n.Odds < 100 {
+		if n.Odds != 0.0 && n.Odds < gnt.OddsHigh {
 			n.Annotation = annotation.Doubtful.String()
 		}
 	}
 	return &Names{Data: data, Path: text.FilePath(NamesFile)}
 }
 
+// Save writes current state of names to file
 func (n *Names) Save() error {
 	json := n.Data.ToJSON()
 	return ioutil.WriteFile(n.Path, json, 0644)
 }
 
-func nameStrings(n *gnfinder.Name, current bool, i int, total int) ([]string, error) {
+// NameStrings composes text to show in terminal gui
+func NameStrings(n *gnfinder.Name, current bool, i int, total int) ([]string, error) {
 	name := make([]string, 4)
 	nameString := n.Name
 	if current {
@@ -53,14 +57,15 @@ func nameStrings(n *gnfinder.Name, current bool, i int, total int) ([]string, er
 		name[1] = fmt.Sprintf("%s (Score: %0.2f)", name[1], math.Log10(n.Odds))
 	}
 	name[2] = fmt.Sprintf("Name: %s", nameString)
-	annotation, err := annotation.NewAnnotation(n.Annotation)
+	ann, err := annotation.NewAnnotation(n.Annotation)
 	if err != nil {
 		return nil, err
 	}
-	name[3] = annotation.Format()
+	name[3] = ann.Format()
 	return name, nil
 }
 
+// NamesFromJSON creates gntagger's name structure from a finder output
 func NamesFromJSON(path string) *Names {
 	o := gnfinder.Output{}
 	b, err := ioutil.ReadFile(path)
@@ -71,6 +76,7 @@ func NamesFromJSON(path string) *Names {
 	return &Names{path, o}
 }
 
-func (names *Names) GetCurrentName() *gnfinder.Name {
-	return &names.Data.Names[names.Data.Meta.CurrentName]
+// GetCurrentName returns currently selected name
+func (n *Names) GetCurrentName() *gnfinder.Name {
+	return &n.Data.Names[n.Data.Meta.CurrentName]
 }

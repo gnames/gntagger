@@ -14,23 +14,30 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
+// FileType describes types created by gntagger during name finding and
+// curation.
 type FileType int
 
 const (
+	// InputFile contains text used for name-finding.
 	InputFile FileType = iota
+	// NamesFile contains JSON output with names and metadata.
 	NamesFile
+	// MetaFile creates meta-information used for various purposes.
 	MetaFile
 )
 
+// TextMeta used for creating the content of the MetaFile
 type TextMeta struct {
-	// Checksum is a hash calculated from the content
+	// Checksum is a hash calculated from the content.
 	Checksum string `json:"text_checksum"`
-	// Githash is a hash of a git commit. It would be 'n/a' if not given
+	// Githash is a hash of a git commit. It would be 'n/a' if not given.
 	Githash string `json:"app_git_commit"`
-	// Timestamp of the last save
+	// Timestamp of the last save.
 	Timestamp string `json:"save_timestamp"`
 }
 
+// ToJSON converts meta-information into JSON format
 func (t *TextMeta) ToJSON() []byte {
 	json, err := jsoniter.Marshal(t)
 	if err != nil {
@@ -39,6 +46,7 @@ func (t *TextMeta) ToJSON() []byte {
 	return json
 }
 
+// Text contains text of the input and its metadata
 type Text struct {
 	// Raw text, as it was given by a user
 	Raw []byte
@@ -58,6 +66,7 @@ type Text struct {
 	errors map[string]error
 }
 
+// NewText creates new Text object
 func NewText(data []byte, path string, githash string) *Text {
 	path = preparePath(path)
 	checksum := fmt.Sprintf("%x", sha1.Sum(data))
@@ -80,6 +89,8 @@ func NewText(data []byte, path string, githash string) *Text {
 	return text
 }
 
+// Errors returns list of errors that happened during execution of the
+// gntagger.
 func (t *Text) Errors() []error {
 	res := make([]error, 0, len(t.errors))
 	for _, v := range t.errors {
@@ -88,6 +99,7 @@ func (t *Text) Errors() []error {
 	return res
 }
 
+// AddError adds a new arror to the Text's error collection.
 func (t *Text) AddError(err error) {
 	if t.errors == nil {
 		t.errors = make(map[string]error)
@@ -98,20 +110,41 @@ func (t *Text) AddError(err error) {
 	}
 }
 
+// Process removes all non-printable characters from Text and wraps
+// its lines making sure that all scientific names are visible.
 func (t *Text) Process(width int) {
 	if runtime.GOOS == "windows" {
 		width = 100
 	}
-	printable := PrintableBytes(t.Raw)
-	t.ProcessedBytes = Wrap(printable, width)
+	printable := printableBytes(t.Raw)
+	t.ProcessedBytes = wrap(printable, width)
 	t.Processed = []rune(string(t.ProcessedBytes))
 }
 
+// FilePath returns a file path for a given FileType.
 func (t *Text) FilePath(f FileType) string {
 	return filepath.Join(t.Path, t.Files[f])
 }
 
-func PrintableBytes(b []byte) []byte {
+// PrepareFilesAndText creates files if needed and returns list of names
+// for curation.
+func PrepareFilesAndText(t *Text, w int, gnt *GnTagger) *Names {
+	exist, err := fileExistsAlready(t)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	if exist {
+		processedTextFromFile(t)
+		return NamesFromJSON(t.FilePath(NamesFile))
+	}
+	t.Process(w)
+	names := NewNames(t, gnt)
+	createFilesGently(t, names)
+	return names
+}
+
+func printableBytes(b []byte) []byte {
 	init := make([]byte, 0, len(b))
 	target := bytes.NewBuffer(init)
 	source := bytes.NewReader(b)
@@ -131,7 +164,7 @@ func PrintableBytes(b []byte) []byte {
 	return target.Bytes()
 }
 
-func Wrap(b []byte, width int) []byte {
+func wrap(b []byte, width int) []byte {
 	if width <= 0 {
 		width = 5
 	}
@@ -191,21 +224,4 @@ func preparePath(path string) string {
 	d, f := filepath.Split(path)
 	dir := filepath.Join(d, f+"_gntagger")
 	return dir
-}
-
-func prepareFilesAndText(t *Text, w int, bayes *bool) *Names {
-	exist, err := fileExistsAlready(t)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	if exist {
-		processedTextFromFile(t)
-		return NamesFromJSON(t.FilePath(NamesFile))
-	} else {
-		t.Process(w)
-		names = NewNames(t, bayes)
-		createFilesGently(t, names)
-		return names
-	}
 }
