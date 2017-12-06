@@ -10,11 +10,17 @@ import (
 	"testing"
 )
 
-const pathLong = "./testdata/seashells_book.txt"
-const pathShort = "./testdata/short.txt"
+const (
+	pathLong       = "./testdata/seashells_book.txt"
+	pathShort      = "./testdata/short.txt"
+	pathNamesAnnot = "./testdata/names_annot.json"
+)
 
-var dataLong []byte
-var dataShort []byte
+var (
+	dataLong       []byte
+	dataShort      []byte
+	dataNamesAnnot []byte
+)
 
 func TestGntagger(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -26,6 +32,8 @@ var _ = BeforeSuite(func() {
 	dataLong, err = ioutil.ReadFile(pathLong)
 	Expect(err).ToNot(HaveOccurred())
 	dataShort, err = ioutil.ReadFile(pathShort)
+	Expect(err).ToNot(HaveOccurred())
+	dataNamesAnnot, err = ioutil.ReadFile(pathNamesAnnot)
 	Expect(err).ToNot(HaveOccurred())
 })
 

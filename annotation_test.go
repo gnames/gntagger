@@ -46,6 +46,8 @@ var _ = Describe("Annotation", func() {
 			a := NotName
 			b := a.In(Species, Accepted)
 			Expect(b).To(BeFalse())
+			b = !a.In(Species, Accepted, NotName)
+			Expect(b).To(BeFalse())
 			b = a.In(Species, Accepted, NotName)
 			Expect(b).To(BeTrue())
 		})

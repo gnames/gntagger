@@ -251,44 +251,18 @@ func noName(g *gocui.Gui, _ *gocui.View) error {
 	return err
 }
 
+// Changes annotation for current and, if required, the following names
 func setKey(g *gocui.Gui, a annotation.Annotation) error {
 	var err error
-	names.GetCurrentName().Annotation = a.String()
-	if names.Data.Meta.CurrentName >= lastReviewedNameIndex-3 {
-		if a.In(annotation.NotName, annotation.Accepted) {
-			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
-				name := &names.Data.Names[i]
-				nameAnn, err := annotation.NewAnnotation(name.Annotation)
-				if err != nil {
-					return nil
-				}
-				if names.GetCurrentName().Name == name.Name &&
-					(nameAnn.In(annotation.NotAssigned, annotation.Doubtful) ||
-						i < lastReviewedNameIndex) {
-					name.Annotation = a.String()
-				}
-			}
-		} else if a != annotation.NotAssigned {
-			for i := names.Data.Meta.CurrentName + 1; i < len(names.Data.Names); i++ {
-				name := &names.Data.Names[i]
-				newAnn, err := annotation.NewAnnotation(name.Annotation)
-				if err != nil {
-					return err
-				}
-				if names.GetCurrentName().Name == name.Name &&
-					newAnn == annotation.NotName {
-					name.Annotation = annotation.NotAssigned.String()
-				}
-			}
-		}
+
+	if err = names.UpdateAnnotations(a, lastReviewedNameIndex, gnt); err != nil {
+		return err
 	}
 
 	if err = renderNamesView(g); err != nil {
 		return err
 	}
-	if err = renderTextView(g); err != nil {
-		return err
-	}
+	err = renderTextView(g)
 	return err
 }
 
@@ -297,18 +271,19 @@ func listForward(g *gocui.Gui, _ *gocui.View) error {
 	name := names.GetCurrentName()
 	ann, err := annotation.NewAnnotation(name.Annotation)
 	if err != nil {
-		return nil
+		return err
 	}
+
 	if ann == annotation.NotAssigned {
-		name.Annotation = annotation.Accepted.String()
-	} else if ann == annotation.Doubtful {
-		err := setKey(g, annotation.NotName)
+		err := setKey(g, annotation.Accepted)
 		if err != nil {
-			return nil
+			return err
 		}
 	}
+
 	step := 1
-	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 {
+	if names.Data.Meta.CurrentName == len(names.Data.Names)-1 ||
+		name.Annotation == annotation.Doubtful.String() {
 		step = 0
 	}
 	names.Data.Meta.CurrentName += step

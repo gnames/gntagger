@@ -1,0 +1,359 @@
+{
+  "metadata": {
+    "date": "2017-12-07T11:14:39.105497612-06:00",
+    "language": "",
+    "total_words": 171024,
+    "total_candidates": 40737,
+    "total_names": 5049
+  },
+  "names": [
+    {
+      "type": "Uninomial(nlp)",
+      "verbatim": "Gastropoda",
+      "name": "Gastropoda",
+      "odds": 211.34625621802886,
+      "likelihoods": {
+        "Name": {
+          "uniLen": {
+            "10": 2.693160260792618
+          },
+          "uniDict": {
+            "GreyUninomial": 6.211265550588297
+          },
+          "uniEnd3": {
+            "oda": 77.17827833071415
+          },
+          "PriorOdds": {
+            "true": 0.2073122171945701
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          }
+        }
+      },
+      "start": 8454,
+      "end": 8464,
+      "annotation": ""
+    },
+    {
+      "type": "Uninomial",
+      "verbatim": "Amphineura",
+      "name": "Amphineura",
+      "odds": 9327.302054397187,
+      "likelihoods": {
+        "Name": {
+          "uniDict": {
+            "WhiteUninomial": 564.3661602933473
+          },
+          "uniEnd3": {
+            "ura": 69.9428147372097
+          },
+          "PriorOdds": {
+            "true": 0.11111111111111112
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "uniLen": {
+            "10": 2.693160260792618
+          }
+        }
+      },
+      "start": 8517,
+      "end": 8527,
+      "annotation": ""
+    },
+    {
+      "type": "Uninomial",
+      "verbatim": "Scaphopoda",
+      "name": "Scaphopoda",
+      "odds": 10292.19537036931,
+      "likelihoods": {
+        "Name": {
+          "PriorOdds": {
+            "true": 0.11111111111111112
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "uniLen": {
+            "10": 2.693160260792618
+          },
+          "uniDict": {
+            "WhiteUninomial": 564.3661602933473
+          },
+          "uniEnd3": {
+            "oda": 77.17827833071415
+          }
+        }
+      },
+      "start": 8576,
+      "end": 8586,
+      "annotation": ""
+    },
+    {
+      "type": "Uninomial",
+      "verbatim": "Pelecypoda",
+      "name": "Pelecypoda",
+      "odds": 10292.19537036931,
+      "likelihoods": {
+        "Name": {
+          "PriorOdds": {
+            "true": 0.11111111111111112
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "uniLen": {
+            "10": 2.693160260792618
+          },
+          "uniDict": {
+            "WhiteUninomial": 564.3661602933473
+          },
+          "uniEnd3": {
+            "oda": 77.17827833071415
+          }
+        }
+      },
+      "start": 8634,
+      "end": 8644,
+      "annotation": ""
+    },
+    {
+      "type": "Uninomial",
+      "verbatim": "Cephalopoda",
+      "name": "Cephalopoda",
+      "odds": 12336.63818974995,
+      "likelihoods": {
+        "Name": {
+          "PriorOdds": {
+            "true": 0.11111111111111112
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "uniLen": {
+            "11": 3.22812991094814
+          },
+          "uniDict": {
+            "WhiteUninomial": 564.3661602933473
+          },
+          "uniEnd3": {
+            "oda": 77.17827833071415
+          }
+        }
+      },
+      "start": 8692,
+      "end": 8703,
+      "annotation": ""
+    },
+    {
+      "type": "Uninomial(nlp)",
+      "verbatim": "Octopus",
+      "name": "Octopus",
+      "odds": 37.21326603673062,
+      "likelihoods": {
+        "Name": {
+          "uniDict": {
+            "GreyGenus": 1.557966401243363
+          },
+          "uniEnd3": {
+            "pus": 332.8313253012048
+          },
+          "PriorOdds": {
+            "true": 0.11111111111111112
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "uniLen": {
+            "7": 0.8179480726944466
+          }
+        }
+      },
+      "start": 8712,
+      "end": 8719,
+      "annotation": "Doubtful"
+    },
+    {
+      "type": "PossibleBinomial",
+      "verbatim": "Miiricea \nmuricata",
+      "name": "Miiricea muricata",
+      "odds": 462914.0298804448,
+      "likelihoods": {
+        "Name": {
+          "uniDict": {
+            "NotInDictionary": 0.19051688408811815
+          },
+          "uniEnd3": {
+            "cea": 192.9456958267854
+          },
+          "spEnd3": {
+            "ata": 2156.1681508643264
+          },
+          "PriorOdds": {
+            "true": 0.11111111111111112
+          },
+          "uniLen": {
+            "8": 1.4243221524785579
+          },
+          "spLen": {
+            "8": 8.053994562642584
+          },
+          "spDict": {
+            "WhiteSpecies": 4844.142875851231
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "spCapitalized": {
+            "false": 2.080177903410865
+          }
+        }
+      },
+      "start": 9224,
+      "end": 9242,
+      "annotation": ""
+    },
+    {
+      "type": "Uninomial(nlp)",
+      "verbatim": "Venus",
+      "name": "Venus",
+      "odds": 16.35214179466878,
+      "likelihoods": {
+        "Name": {
+          "PriorOdds": {
+            "true": 0.2073122171945701
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "uniLen": {
+            "5": 0.3834177288865608
+          },
+          "uniDict": {
+            "GreyGenus": 1.557966401243363
+          },
+          "uniEnd3": {
+            "nus": 167.21960304988065
+          }
+        }
+      },
+      "start": 10472,
+      "end": 10477,
+      "annotation": "Doubtful"
+    },
+    {
+      "type": "Uninomial(nlp)",
+      "verbatim": "Venus",
+      "name": "Venus",
+      "odds": 16.35214179466878,
+      "likelihoods": {
+        "Name": {
+          "uniEnd3": {
+            "nus": 167.21960304988065
+          },
+          "PriorOdds": {
+            "true": 0.2073122171945701
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "uniLen": {
+            "5": 0.3834177288865608
+          },
+          "uniDict": {
+            "GreyGenus": 1.557966401243363
+          }
+        }
+      },
+      "start": 10672,
+      "end": 10677,
+      "annotation": "Doubtful"
+    },
+    {
+      "type": "Uninomial(nlp)",
+      "verbatim": "Venus",
+      "name": "Venus",
+      "odds": 16.35214179466878,
+      "likelihoods": {
+        "Name": {
+          "PriorOdds": {
+            "true": 0.2073122171945701
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "uniLen": {
+            "5": 0.3834177288865608
+          },
+          "uniDict": {
+            "GreyGenus": 1.557966401243363
+          },
+          "uniEnd3": {
+            "nus": 167.21960304988065
+          }
+        }
+      },
+      "start": 10689,
+      "end": 10694,
+      "annotation": "Doubtful"
+    },
+    {
+      "type": "Uninomial",
+      "verbatim": "Mollusca",
+      "name": "Mollusca",
+      "odds": 340.19981276893753,
+      "likelihoods": {
+        "Name": {
+          "uniDict": {
+            "WhiteUninomial": 564.3661602933473
+          },
+          "uniEnd3": {
+            "sca": 4.823642395669634
+          },
+          "PriorOdds": {
+            "true": 0.11111111111111112
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "uniLen": {
+            "8": 1.4243221524785579
+          }
+        }
+      },
+      "start": 11408,
+      "end": 11416,
+      "annotation": ""
+    },
+    {
+      "type": "Uninomial",
+      "verbatim": "Gastropoda",
+      "name": "Gastropoda",
+      "odds": 211.0,
+      "likelihoods": {
+        "Name": {
+          "uniEnd3": {
+            "ina": 5.466794715092252
+          },
+          "PriorOdds": {
+            "true": 0.25
+          },
+          "uniAbbr": {
+            "false": 0.7896457129080308
+          },
+          "uniLen": {
+            "9": 2.0749218921320427
+          },
+          "uniDict": {
+            "WhiteGenus": 14798.93486991444
+          }
+        }
+      },
+      "start": 16232,
+      "end": 16241,
+      "annotation": ""
+    }
+  ]
+}

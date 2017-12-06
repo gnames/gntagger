@@ -10,7 +10,8 @@ import (
 	"github.com/gnames/gntagger/annotation"
 )
 
-// Names is an object that keeps output of a name finder and the path where to save this data on disk
+// Names is an object that keeps output of a name finder and the path where to
+// save this data on disk
 type Names struct {
 	// Path to json file with names
 	Path string
@@ -18,9 +19,11 @@ type Names struct {
 	Data gnfinder.Output
 }
 
-// NewNames uses a name finder or existing information to return Names structure generated from a text
+// NewNames uses a name finder or existing information to return Names structure
+// generated from a text
 func NewNames(text *Text, gnt *GnTagger) *Names {
-	dict := gnfinder.LoadDictionary()
+	dict :=
+		gnfinder.LoadDictionary()
 
 	opts := []gnfinder.Opt{gnfinder.WithBayesThreshold(gnt.OddsLow)}
 	if gnt.Bayes {
@@ -45,7 +48,8 @@ func (n *Names) Save() error {
 }
 
 // NameStrings composes text to show in terminal gui
-func NameStrings(n *gnfinder.Name, current bool, i int, total int) ([]string, error) {
+func NameStrings(n *gnfinder.Name, current bool, i int,
+	total int) ([]string, error) {
 	name := make([]string, 4)
 	nameString := n.Name
 	if current {
@@ -79,4 +83,64 @@ func NamesFromJSON(path string) *Names {
 // GetCurrentName returns currently selected name
 func (n *Names) GetCurrentName() *gnfinder.Name {
 	return &n.Data.Names[n.Data.Meta.CurrentName]
+}
+
+// UpdateAnnotations takes an annotation updates the current name with it.
+// If needed, it propagates annotations further down the 'unseen' list.
+func (n *Names) UpdateAnnotations(newAnnot annotation.Annotation, edge int,
+	gnt *GnTagger) error {
+	var (
+		err      error
+		oldAnnot annotation.Annotation
+	)
+
+	name := n.GetCurrentName()
+	oldAnnot, err = annotation.NewAnnotation(name.Annotation)
+	if err != nil {
+		return err
+	}
+
+	name.Annotation = newAnnot.String()
+
+	notAtEdge := n.Data.Meta.CurrentName < edge-3
+	notAcceptedOrRejected := !newAnnot.In(annotation.NotName, annotation.Accepted)
+
+	if notAtEdge || notAcceptedOrRejected {
+		return nil
+	}
+	return tryToChangeNamesForward(n, oldAnnot, newAnnot, edge, gnt)
+}
+
+func tryToChangeNamesForward(n *Names, oldAnnot annotation.Annotation,
+	newAnnot annotation.Annotation, edge int, gnt *GnTagger) error {
+	for i := n.Data.Meta.CurrentName + 1; i < len(n.Data.Names); i++ {
+		name := &n.Data.Names[i]
+		sameName := n.GetCurrentName().Name == name.Name
+		if !sameName {
+			continue
+		}
+
+		if oldAnnot.In(annotation.NotAssigned, annotation.Doubtful) {
+			name.Annotation = newAnnot.String()
+		} else {
+			nameAnnot, err := annotation.NewAnnotation(name.Annotation)
+			if err != nil {
+				return err
+			}
+			unmarkNames(name, nameAnnot, gnt)
+		}
+	}
+	return nil
+}
+
+func unmarkNames(name *gnfinder.Name, a annotation.Annotation, gnt *GnTagger) {
+	if IsDoubtful(name, gnt) {
+		name.Annotation = annotation.Doubtful.String()
+	} else {
+		name.Annotation = annotation.NotAssigned.String()
+	}
+}
+
+func IsDoubtful(n *gnfinder.Name, gnt *GnTagger) bool {
+	return n.Odds != 0 && n.Odds < gnt.OddsHigh
 }

@@ -15,12 +15,12 @@ function! Layout()
     sp term://bash
     resize 8
     wincmd l
-    vertical resize 81
+    vertical resize 85
     edit README.md
     tabe README.md
     vsp term://bash
     wincmd l
-    vertical resize 81
+    vertical resize 85
     tabfirst
 endfunction
 
