@@ -7,6 +7,8 @@ import (
 	"math"
 
 	"github.com/gnames/gnfinder"
+	"github.com/gnames/gnfinder/dict"
+	"github.com/gnames/gnfinder/util"
 	"github.com/gnames/gntagger/annotation"
 )
 
@@ -23,14 +25,16 @@ type Names struct {
 // generated from a text
 func NewNames(text *Text, gnt *GnTagger) *Names {
 	dict :=
-		gnfinder.LoadDictionary()
+		dict.LoadDictionary()
 
-	opts := []gnfinder.Opt{gnfinder.WithBayesThreshold(gnt.OddsLow)}
+	opts := []util.Opt{util.WithBayesThreshold(gnt.OddsLow)}
 	if gnt.Bayes {
-		opts = append(opts, gnfinder.WithBayes)
+		opts = append(opts, util.WithBayes(true))
 	}
 
-	data := gnfinder.FindNames(text.Processed, &dict, opts...)
+	m := util.NewModel(opts...)
+
+	data := gnfinder.FindNames(text.Processed, &dict, m)
 
 	for i := range data.Names {
 		n := &data.Names[i]

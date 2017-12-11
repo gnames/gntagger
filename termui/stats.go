@@ -111,12 +111,19 @@ func (s *Stats) format() string {
 		addedPercentStr = fmt.Sprintf("%3d%%", s.addedPercent)
 	}
 
+	skipRepetition := "N"
+	if gnt.Express {
+		skipRepetition = "Y"
+	}
+
 	statsStr := fmt.Sprintf(
-		"Precision: %s, Recall: %s | "+
+		"\033[33mSkip checked (F4) %s\033[0m | "+
+			"Precision: %s, Recall: %s | "+
 			"\033[%d;1mAcc. %s "+
 			"\033[%d;1mRej. %s "+
 			"\033[%d;1mMod. %s "+
 			"\033[%d;1mAdd. %s \033[0m",
+		skipRepetition,
 		precisionStr,
 		recallStr,
 		annotation.Accepted.Color(),
