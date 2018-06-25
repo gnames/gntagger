@@ -34,12 +34,15 @@ const (
 )
 
 var (
-	gnt                   = &gntagger.GnTagger{}
-	views                 = map[ViewType]*Window{}
-	names                 = &gntagger.Names{}
-	text                  = &gntagger.Text{}
-	saveCount             = 0
-	nameViewCenterOffset  = 0
+	gnt                  = &gntagger.GnTagger{}
+	views                = map[ViewType]*Window{}
+	names                = &gntagger.Names{}
+	text                 = &gntagger.Text{}
+	saveCount            = 0
+	nameViewCenterOffset = 0
+	// lastReviewedNameIndex keeps the furtherst checked name so far. It is
+	// important for knowing it in case if we moved back and want to know
+	// how far from the 'edge' we are now.
 	lastReviewedNameIndex = 0
 )
 
@@ -84,6 +87,11 @@ func InitGUI(t *gntagger.Text, gntag *gntagger.GnTagger) {
 
 // Keybindings sets hotkeys for oprations on the text and names
 func Keybindings(g *gocui.Gui) error {
+	if err := g.SetKeybinding("", gocui.KeyF4, gocui.ModNone,
+		express); err != nil {
+		return err
+	}
+
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
 		quit); err != nil {
 		return err
@@ -214,6 +222,19 @@ func viewHelp(g *gocui.Gui) error {
 	return nil
 }
 
+func express(g *gocui.Gui, _ *gocui.View) error {
+	if gnt.Express {
+		gnt.Express = false
+	} else {
+		gnt.Express = true
+	}
+
+	if err := renderStats(g); err != nil {
+		return err
+	}
+	return nil
+}
+
 func quit(g *gocui.Gui, v *gocui.View) error {
 	if err := save(g, v); err != nil {
 		log.Panic(err)
@@ -286,7 +307,22 @@ func listForward(g *gocui.Gui, _ *gocui.View) error {
 		name.Annotation == annotation.Doubtful.String() {
 		step = 0
 	}
+
 	names.Data.Meta.CurrentName += step
+	if gnt.Express && step > 0 {
+		for _, v := range names.Data.Names[names.Data.Meta.CurrentName:] {
+			ann, err := annotation.NewAnnotation(v.Annotation)
+			if err != nil {
+				panic(fmt.Errorf("Uknown annotation %s", v.Annotation))
+			}
+			if ann.In(annotation.NotAssigned, annotation.Doubtful) {
+				break
+			} else {
+				names.Data.Meta.CurrentName += 1
+			}
+		}
+	}
+
 	if names.Data.Meta.CurrentName > lastReviewedNameIndex {
 		lastReviewedNameIndex = names.Data.Meta.CurrentName
 	}
@@ -452,7 +488,7 @@ func renderStats(g *gocui.Gui) error {
 	fmt.Fprintln(viewStats)
 	fmt.Fprintln(viewStats)
 	statsStr := stats.format()
-	statsStrVisibleLen := maxX - len(statsStr) + 32 // to compensate invisible chars
+	statsStrVisibleLen := maxX - len(statsStr) + 40 // to compensate invisible chars
 	for i := 0; i < statsStrVisibleLen; i++ {
 		fmt.Fprint(viewStats, " ")
 	}

@@ -32,7 +32,9 @@ func NewNames(text *Text, gnt *GnTagger) *Names {
 		opts = append(opts, util.WithBayes(true))
 	}
 
-	data := gnfinder.FindNames(text.Processed, &dict, opts...)
+	m := util.NewModel(opts...)
+
+	data := gnfinder.FindNames(text.Processed, &dict, m)
 
 	for i := range data.Names {
 		n := &data.Names[i]

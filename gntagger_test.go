@@ -25,7 +25,7 @@ var _ = Describe("Gntagger", func() {
 			It("cleans, wraps a text, and adds it to Processed field", func() {
 				t := NewText(dataLong, pathLong, "abcd")
 				t.Process(40)
-				Expect(len(t.Processed)).To(Equal(1112333))
+				Expect(len(t.Processed)).To(Equal(1112796))
 			})
 		})
 
