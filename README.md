@@ -1,23 +1,23 @@
 # gntagger [![Doc Status][doc-img]][doc]
 
-gntagger not only finds scientific names in a document. It also allows user to
+gntagger not only finds scientific names in a document. It also allows the user to
 go through each found name, see it in a context of a text, and then accept or
 reject the found name.
 
-We made this program so we can improve on quality of name-finding algorithm,
+We made this program so we can improve on the quality of name-finding algorithm,
 but it is useful for anybody who needs to extract scientific names from a book
 or a scientific paper. The program works for MS Windows, Mac and Linux and it
 runs from a command line interface -- CMD in case of windows, or a terminal
 under Mac and Linux.
 
-gntagger allows to curate 4000 names spread over 600 pages in about 2 hours. It
-is significantly faster than curaion made in a text editor or pdf viewer.
+gntagger allows you to curate 4000 names spread over 600 pages in about 2 hours. It
+is significantly faster than curation made in a text editor or pdf viewer.
 
 [![Ascii Cast][asciicast-img]][asciicast]
 
 ## Installation
 
-The  program is just an executable file that runs from a command line. Download
+The  program is just an executable file that runs from a command line. Download the
 [latest zip or tar file][releases] for your operating system, extract the file
 and place it somehere in your `PATH`, so it is visible by your system.
 
@@ -90,7 +90,7 @@ pdftotext -layout file.pdf | gntagger
 pdftotext -layout file.pdf | gntagger -bayes
 ```
 
-Note that -layout flag for pdftotext tries to preserve original structure of
+Note that -layout flag for pdftotext tries to preserve the original structure of
 the text, as it was in the original PDF. It significantly increases chances for
 finding names that are split between the end and the start of two lines.
 
