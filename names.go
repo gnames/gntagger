@@ -8,7 +8,7 @@ import (
 
 	"github.com/gnames/gnfinder"
 	"github.com/gnames/gnfinder/dict"
-	"github.com/gnames/gnfinder/util"
+	"github.com/gnames/gnfinder/output"
 	"github.com/gnames/gntagger/annotation"
 )
 
@@ -18,23 +18,20 @@ type Names struct {
 	// Path to json file with names
 	Path string
 	// Data is a gnfinder output
-	Data gnfinder.Output
+	Data output.Output
 }
 
 // NewNames uses a name finder or existing information to return Names structure
 // generated from a text
 func NewNames(text *Text, gnt *GnTagger) *Names {
-	dict :=
-		dict.LoadDictionary()
-
-	opts := []util.Opt{util.WithBayesThreshold(gnt.OddsLow)}
-	if gnt.Bayes {
-		opts = append(opts, util.WithBayes(true))
+	opts := []gnfinder.Option{
+		gnfinder.OptBayesThreshold(gnt.OddsLow),
+		gnfinder.OptDict(dict.LoadDictionary()),
 	}
 
-	m := util.NewModel(opts...)
+	gnf := gnfinder.NewGNfinder(opts...)
 
-	data := gnfinder.FindNames(text.Processed, &dict, m)
+	data := gnf.FindNames([]byte(string(text.Processed)))
 
 	for i := range data.Names {
 		n := &data.Names[i]
@@ -42,7 +39,7 @@ func NewNames(text *Text, gnt *GnTagger) *Names {
 			n.Annotation = annotation.Doubtful.String()
 		}
 	}
-	return &Names{Data: data, Path: text.FilePath(NamesFile)}
+	return &Names{Data: *data, Path: text.FilePath(NamesFile)}
 }
 
 // Save writes current state of names to file
@@ -52,7 +49,7 @@ func (n *Names) Save() error {
 }
 
 // NameStrings composes text to show in terminal gui
-func NameStrings(n *gnfinder.Name, current bool, i int,
+func NameStrings(n *output.Name, current bool, i int,
 	total int) ([]string, error) {
 	name := make([]string, 4)
 	nameString := n.Name
@@ -75,7 +72,7 @@ func NameStrings(n *gnfinder.Name, current bool, i int,
 
 // NamesFromJSON creates gntagger's name structure from a finder output
 func NamesFromJSON(path string) *Names {
-	o := gnfinder.Output{}
+	o := output.Output{}
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Panicln(err)
@@ -85,7 +82,7 @@ func NamesFromJSON(path string) *Names {
 }
 
 // GetCurrentName returns currently selected name
-func (n *Names) GetCurrentName() *gnfinder.Name {
+func (n *Names) GetCurrentName() *output.Name {
 	return &n.Data.Names[n.Data.Meta.CurrentName]
 }
 
@@ -137,7 +134,7 @@ func tryToChangeNamesForward(n *Names, oldAnnot annotation.Annotation,
 	return nil
 }
 
-func unmarkNames(name *gnfinder.Name, a annotation.Annotation, gnt *GnTagger) {
+func unmarkNames(name *output.Name, a annotation.Annotation, gnt *GnTagger) {
 	if IsDoubtful(name, gnt) {
 		name.Annotation = annotation.Doubtful.String()
 	} else {
@@ -145,6 +142,6 @@ func unmarkNames(name *gnfinder.Name, a annotation.Annotation, gnt *GnTagger) {
 	}
 }
 
-func IsDoubtful(n *gnfinder.Name, gnt *GnTagger) bool {
+func IsDoubtful(n *output.Name, gnt *GnTagger) bool {
 	return n.Odds != 0 && n.Odds < gnt.OddsHigh
 }

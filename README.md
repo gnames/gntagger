@@ -28,7 +28,7 @@ first you need to convert it to text.
 
 ### Linux
 
-You can just use `less` command.
+Usually you can just use `less` command.
 
 ```
 less paper1.pdf | gntagger
@@ -60,6 +60,7 @@ To find out version
 
 ```bash
 gntagger -version
+gntagger -V
 ```
 
 To get names from a file (processed text and list of names will be saved in the
@@ -67,10 +68,6 @@ same directory as the text file)
 
 ```bash
 gntagger file_with_names.txt
-
-#using bayes algorithm
-
-gntagger -bayes file_with_names.txt
 
 # on windows
 gntagger.exe  file_with_names.txt

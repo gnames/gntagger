@@ -19,7 +19,7 @@ func ShowWarningIfPreviousData(text *Text) {
 	if old := previousDataChecksums(text); old.Checksum != "" {
 		if text.Checksum != old.Checksum {
 			warning = "\nYour input file has changed."
-		} else if text.Githash != old.Githash {
+		} else if text.GNtaggerVersion != old.GNtaggerVersion {
 			warning = "\nYour gntagger is updated."
 		}
 		if warning != "" {

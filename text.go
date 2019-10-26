@@ -31,8 +31,8 @@ const (
 type TextMeta struct {
 	// Checksum is a hash calculated from the content.
 	Checksum string `json:"text_checksum"`
-	// Githash is a hash of a git commit. It would be 'n/a' if not given.
-	Githash string `json:"app_git_commit"`
+	// GNtaggerVersion is the version of gntagger that generated output.
+	GNtaggerVersion string `json:"gntagger_version"`
 	// Timestamp of the last save.
 	Timestamp string `json:"save_timestamp"`
 }
@@ -60,20 +60,20 @@ type Text struct {
 	// Files is a map that contains names of the files created by gntagger
 	Files map[FileType]string
 	// TextMeta describes provides metainformation about text:
-	// Checksum, Githash, Timestamp
+	// Checksum, GNtaggerVersion, Timestamp
 	TextMeta
 	// errors that accumulated during the process. They will be shown on exit.
 	errors map[string]error
 }
 
 // NewText creates new Text object
-func NewText(data []byte, path string, githash string) *Text {
+func NewText(data []byte, path string, GNtaggerVersion string) *Text {
 	path = preparePath(path)
 	checksum := fmt.Sprintf("%x", sha1.Sum(data))
 	meta := TextMeta{
-		Checksum:  checksum,
-		Githash:   githash,
-		Timestamp: timestamp(),
+		Checksum:        checksum,
+		Timestamp:       timestamp(),
+		GNtaggerVersion: GNtaggerVersion,
 	}
 
 	text := &Text{
