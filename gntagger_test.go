@@ -1,7 +1,7 @@
 package gntagger_test
 
 import (
-	"github.com/gnames/gnfinder"
+	"github.com/gnames/gnfinder/output"
 	. "github.com/gnames/gntagger"
 	"github.com/gnames/gntagger/annotation"
 
@@ -147,14 +147,14 @@ var _ = Describe("Gntagger", func() {
 func makeNames() *Names {
 	gnt := NewGnTagger()
 	gnt.Bayes = true
-	t := NewText(dataShort, pathShort, "abcd")
+	t := NewText(dataShort, pathShort, "v0.0.0")
 	t.Process(80)
 	n := NewNames(t, gnt)
 	return n
 }
 
 func namesForAnnotations() *Names {
-	var o gnfinder.Output
+	var o output.Output
 	o.FromJSON(dataNamesAnnot)
 	return &Names{Path: pathNamesAnnot, Data: o}
 }
