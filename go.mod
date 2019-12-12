@@ -3,7 +3,7 @@ module github.com/gnames/gntagger
 require (
 	github.com/abadojack/whatlanggo v1.0.1 // indirect
 	github.com/atotto/clipboard v0.1.2
-	github.com/gnames/gnfinder v0.9.1-0.20191028210232-62520511ccb6
+	github.com/gnames/gnfinder v0.9.1
 	github.com/jroimartin/gocui v0.4.0
 	github.com/json-iterator/go v1.1.7
 	github.com/magiconair/properties v1.8.1 // indirect

@@ -2,7 +2,7 @@ package gntagger_test
 
 import (
 	"github.com/gnames/gnfinder/output"
-	. "github.com/gnames/gntagger"
+	"github.com/gnames/gntagger"
 	"github.com/gnames/gntagger/annotation"
 
 	"path/filepath"
@@ -15,7 +15,7 @@ var _ = Describe("Gntagger", func() {
 	Describe("Text", func() {
 		Describe("NewText", func() {
 			It("creates new Text object", func() {
-				t := NewText(dataLong, pathLong, "abcd")
+				t := gntagger.NewText(dataLong, pathLong, "abcd")
 				Expect(t.Path).To(Equal(filepath.Join("testdata",
 					"seashells_book.txt_gntagger")))
 			})
@@ -23,21 +23,26 @@ var _ = Describe("Gntagger", func() {
 
 		Describe("Process", func() {
 			It("cleans, wraps a text, and adds it to Processed field", func() {
-				t := NewText(dataLong, pathLong, "abcd")
+				t := gntagger.NewText(dataLong, pathLong, "v0.0.0")
 				t.Process(40)
-				Expect(len(t.Processed)).To(Equal(1112796))
+				Expect(len(t.Processed)).To(Equal(1112308))
 			})
 		})
 
 		Describe("Names", func() {
 			Describe("NewNames", func() {
 				It("creates new Names object", func() {
-					gnt := NewGnTagger()
+					gnt := gntagger.NewGnTagger()
 					gnt.Bayes = true
-					t := NewText(dataLong, pathLong, "abcd")
+					t := gntagger.NewText(dataLong, pathLong, "abcd")
 					t.Process(80)
-					n := NewNames(t, gnt)
-					Expect(n.Path).To(Equal(filepath.Join("testdata", "seashells_book.txt_gntagger", "names.json")))
+					n := gntagger.NewNames(t, gnt)
+					path := filepath.Join(
+						"testdata",
+						"seashells_book.txt_gntagger",
+						"names.json",
+					)
+					Expect(n.Path).To(Equal(path))
 					Expect(n.Data.Meta.TotalNames).To(BeNumerically(">", 4000))
 				})
 			})
@@ -52,17 +57,17 @@ var _ = Describe("Gntagger", func() {
 
 			Describe("IsDoubtful", func() {
 				It("determines if a name was soubtful", func() {
-					gnt := NewGnTagger()
+					gnt := gntagger.NewGnTagger()
 					ns := makeNames()
 					n := ns.GetCurrentName()
 					Expect(n.Odds).To(BeNumerically(">", gnt.OddsHigh))
-					Expect(IsDoubtful(n, gnt)).To(BeFalse())
+					Expect(gntagger.IsDoubtful(n, gnt)).To(BeFalse())
 					n.Odds = 10.0
 					Expect(n.Odds).To(BeNumerically("<", gnt.OddsHigh))
-					Expect(IsDoubtful(n, gnt)).To(BeTrue())
+					Expect(gntagger.IsDoubtful(n, gnt)).To(BeTrue())
 					n.Odds = 0.0
 					Expect(n.Odds).To(BeNumerically("<", gnt.OddsHigh))
-					Expect(IsDoubtful(n, gnt)).To(BeFalse())
+					Expect(gntagger.IsDoubtful(n, gnt)).To(BeFalse())
 				})
 			})
 
@@ -89,12 +94,12 @@ var _ = Describe("Gntagger", func() {
 				It("updates Doubtful Venus to NotName all the way", func() {
 					names := namesForAnnotations()
 					ns := names.Data.Names
-					gnt := NewGnTagger()
+					gnt := gntagger.NewGnTagger()
 					Expect(gnt.OddsHigh).To(Equal(100.0))
 					Expect(gnt.OddsLow).To(Equal(1.0))
 
 					edge := 7
-					for i, _ := range ns[0:edge] {
+					for i := range ns[0:edge] {
 						v := &ns[i]
 						v.Annotation = annotation.Accepted.String()
 					}
@@ -121,7 +126,7 @@ var _ = Describe("Gntagger", func() {
 				It("updates NotAssigned Gastropoda to Accepted all the way", func() {
 					names := namesForAnnotations()
 					ns := names.Data.Names
-					gnt := NewGnTagger()
+					gnt := gntagger.NewGnTagger()
 
 					Expect(ns[0].Annotation).To(Equal(annotation.NotAssigned.String()))
 					Expect(ns[11].Annotation).To(Equal(annotation.NotAssigned.String()))
@@ -144,17 +149,17 @@ var _ = Describe("Gntagger", func() {
 	})
 })
 
-func makeNames() *Names {
-	gnt := NewGnTagger()
+func makeNames() *gntagger.Names {
+	gnt := gntagger.NewGnTagger()
 	gnt.Bayes = true
-	t := NewText(dataShort, pathShort, "v0.0.0")
+	t := gntagger.NewText(dataShort, pathShort, "v0.0.0")
 	t.Process(80)
-	n := NewNames(t, gnt)
+	n := gntagger.NewNames(t, gnt)
 	return n
 }
 
-func namesForAnnotations() *Names {
+func namesForAnnotations() *gntagger.Names {
 	var o output.Output
 	o.FromJSON(dataNamesAnnot)
-	return &Names{Path: pathNamesAnnot, Data: o}
+	return &gntagger.Names{Path: pathNamesAnnot, Data: o}
 }

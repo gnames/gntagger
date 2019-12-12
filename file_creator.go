@@ -81,13 +81,13 @@ func fileExistsAlready(text *Text) (bool, error) {
 		} else if err != nil {
 			return false, nil
 		} else {
-			return false, fmt.Errorf("Path %s exists but it is a dir", filePath)
+			return false, fmt.Errorf("path %s exists but it is a dir", filePath)
 		}
 	} else if err != nil {
 		err := os.Mkdir(text.Path, 0755)
 		return false, err
 	} else if !stat.IsDir() {
-		return false, fmt.Errorf("Path %s exists but it is not a dir", text.Path)
+		return false, fmt.Errorf("path %s exists but it is not a dir", text.Path)
 	}
 
 	return false, nil
