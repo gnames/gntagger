@@ -69,6 +69,8 @@ github.com/gnames/gnfinder v0.9.0 h1:le0KRTa23zSBql0sTUs2QNUJu22CV4XbDQw8B4vQEn4
 github.com/gnames/gnfinder v0.9.0/go.mod h1:g/JgrLMu3EVc3s++16q+MHPn8gwzY92dZNPNcLVqYVw=
 github.com/gnames/gnfinder v0.9.1-0.20191028210232-62520511ccb6 h1:zHg6bhRaTIuLfegetrIZ2nEF3kRLrlrogY319YjGfIc=
 github.com/gnames/gnfinder v0.9.1-0.20191028210232-62520511ccb6/go.mod h1:g/JgrLMu3EVc3s++16q+MHPn8gwzY92dZNPNcLVqYVw=
+github.com/gnames/gnfinder v0.9.1 h1:7RCR42cPFUWLdceinID+jgSPNyGACkCaBxeLsthXN0c=
+github.com/gnames/gnfinder v0.9.1/go.mod h1:g/JgrLMu3EVc3s++16q+MHPn8gwzY92dZNPNcLVqYVw=
 github.com/gnames/uuid5 v0.1.1 h1:qr+CCfsmvCNeDe8s8YMUSV/XbxWSy+2UQap5jbZ5C6k=
 github.com/gnames/uuid5 v0.1.1/go.mod h1:Zv9jJ66GOpZ8UmYglISzaC2QFh370Rvzz701zzWrjWM=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
